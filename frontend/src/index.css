@@ -1,0 +1,39 @@
+/* Global Styles for CardioVision - Dark Green & Butter Yellow Theme */
+@import "tailwindcss";
+
+:root {
+  --color-dark-green: #003631;
+  --color-butter-yellow: #FFEDA8;
+  --color-cream-bg: #FAFAF5;
+  --color-dark-green-light: rgba(0, 54, 49, 0.08);
+}
+
+html {
+  scroll-behavior: smooth;
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+}
+
+body {
+  background-color: #FAFAF5;
+  color: #003631;
+  margin: 0;
+  padding: 0;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  overflow-x: hidden;
+}
+
+/* Custom Scrollbar */
+::-webkit-scrollbar {
+  width: 8px;
+}
+::-webkit-scrollbar-track {
+  background: #FAFAF5;
+}
+::-webkit-scrollbar-thumb {
+  background: #003631;
+  border-radius: 4px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: #002623;
+}

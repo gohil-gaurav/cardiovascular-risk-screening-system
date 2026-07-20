@@ -1,0 +1,646 @@
+/* ==========================================================================
+   LandingPage.css - Cardiovascular Risk Screening System
+   ========================================================================== */
+
+/* --------------------------------------------------------------------------
+   Hero Section
+   -------------------------------------------------------------------------- */
+.hero-section {
+  position: relative;
+  padding: 80px 24px 100px;
+  max-width: 1280px;
+  margin: 0 auto;
+  overflow: hidden;
+}
+
+.hero-glow-blob {
+  position: absolute;
+  top: -10%;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 600px;
+  height: 600px;
+  background: radial-gradient(circle, rgba(213, 232, 236, 0.5) 0%, rgba(250, 245, 221, 0.3) 60%, rgba(255,255,255,0) 100%);
+  filter: blur(70px);
+  z-index: -1;
+  pointer-events: none;
+}
+
+.hero-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(340px, 1fr));
+  gap: 60px;
+  align-items: center;
+}
+
+.hero-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 16px;
+  border-radius: 30px;
+  background-color: var(--warm-accent);
+  border: 1px solid rgba(223, 58, 49, 0.15);
+  color: var(--primary-navy);
+  font-size: 0.875rem;
+  font-weight: 600;
+  margin-bottom: 24px;
+  box-shadow: 0 2px 8px rgba(46, 74, 113, 0.04);
+}
+
+.hero-title {
+  font-size: clamp(2.5rem, 5vw, 3.8rem);
+  font-weight: 800;
+  line-height: 1.12;
+  color: var(--primary-navy);
+  letter-spacing: -0.03em;
+  margin-bottom: 20px;
+}
+
+.hero-title-highlight {
+  background: linear-gradient(135deg, var(--cta-alert) 0%, #B22B23 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+
+.hero-subtitle {
+  font-size: 1.125rem;
+  line-height: 1.65;
+  color: var(--text-muted);
+  margin-bottom: 36px;
+  max-width: 540px;
+}
+
+.hero-cta-group {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 16px;
+  margin-bottom: 48px;
+}
+
+.btn-primary {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  padding: 16px 32px;
+  border-radius: 16px;
+  background-color: var(--cta-alert);
+  color: #FFFFFF;
+  font-size: 1rem;
+  font-weight: 600;
+  border: none;
+  cursor: pointer;
+  box-shadow: 0 8px 24px rgba(223, 58, 49, 0.35);
+  transition: all 0.3s ease;
+}
+
+.btn-primary:hover {
+  background-color: var(--cta-alert-hover);
+  transform: translateY(-2px);
+  box-shadow: 0 12px 28px rgba(223, 58, 49, 0.45);
+}
+
+.btn-secondary {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  padding: 16px 28px;
+  border-radius: 16px;
+  background-color: #FFFFFF;
+  color: var(--primary-navy);
+  font-size: 1rem;
+  font-weight: 600;
+  border: 1px solid var(--border-medium);
+  text-decoration: none;
+  box-shadow: var(--shadow-sm);
+  transition: all 0.3s ease;
+}
+
+.btn-secondary:hover {
+  background-color: var(--light-bg);
+  border-color: var(--secondary-blue);
+}
+
+.hero-stats-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 20px;
+  padding-top: 24px;
+  border-top: 1px solid var(--border-light);
+}
+
+.hero-stat-number {
+  font-size: 1.75rem;
+  font-weight: 800;
+  color: var(--primary-navy);
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.hero-stat-label {
+  font-size: 0.85rem;
+  color: var(--text-muted);
+  font-weight: 500;
+}
+
+/* Dashboard Mockup Card */
+.dashboard-card {
+  padding: 32px;
+  border-radius: 24px;
+  background: linear-gradient(145deg, #FFFFFF 0%, rgba(213, 232, 236, 0.3) 100%);
+  border: 1px solid rgba(113, 142, 174, 0.25);
+  position: relative;
+}
+
+.dashboard-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding-bottom: 20px;
+  border-bottom: 1px solid var(--border-light);
+  margin-bottom: 24px;
+}
+
+.dashboard-status-badge {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 12px;
+  border-radius: 20px;
+  background-color: rgba(16, 185, 129, 0.1);
+  color: #059669;
+  font-size: 0.75rem;
+  font-weight: 600;
+}
+
+.status-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background-color: #10B981;
+}
+
+.ecg-container {
+  background-color: var(--primary-navy);
+  border-radius: 16px;
+  padding: 20px;
+  color: #FFFFFF;
+  margin-bottom: 20px;
+}
+
+.risk-gauge-card {
+  background-color: #FFFFFF;
+  border-radius: 16px;
+  padding: 18px;
+  border: 1px solid var(--border-light);
+  margin-bottom: 20px;
+}
+
+.risk-bar-track {
+  height: 8px;
+  border-radius: 4px;
+  background-color: var(--light-bg);
+  overflow: hidden;
+}
+
+.risk-bar-fill {
+  width: 12%;
+  height: 100%;
+  border-radius: 4px;
+  background-color: #10B981;
+}
+
+.analytics-subgrid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 14px;
+}
+
+.analytics-card {
+  background-color: #FFFFFF;
+  padding: 14px;
+  border-radius: 14px;
+  border: 1px solid var(--border-light);
+}
+
+.floating-badge {
+  position: absolute;
+  background-color: #FFFFFF;
+  padding: 12px 20px;
+  border-radius: 16px;
+  box-shadow: var(--shadow-lg);
+  border: 1px solid var(--border-light);
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.floating-badge-top {
+  top: -16px;
+  right: -16px;
+}
+
+.floating-badge-bottom {
+  bottom: -20px;
+  left: -20px;
+}
+
+/* --------------------------------------------------------------------------
+   Trusted / Built With Section
+   -------------------------------------------------------------------------- */
+.trusted-section {
+  padding: 40px 24px 70px;
+  max-width: 1280px;
+  margin: 0 auto;
+}
+
+.section-label {
+  font-size: 0.85rem;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--secondary-blue);
+  display: block;
+}
+
+.section-label-alt {
+  color: var(--cta-alert);
+}
+
+.trusted-title {
+  font-size: 1.25rem;
+  font-weight: 700;
+  color: var(--primary-navy);
+  margin-top: 6px;
+}
+
+.trusted-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  gap: 18px;
+  margin-top: 28px;
+}
+
+.trusted-card {
+  background-color: #FFFFFF;
+  border-radius: 16px;
+  padding: 20px 18px;
+  border: 1px solid var(--border-light);
+  box-shadow: var(--shadow-sm);
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  transition: all 0.25s ease;
+}
+
+.trusted-card:hover {
+  transform: translateY(-3px);
+  border-color: var(--secondary-blue);
+  box-shadow: var(--shadow-md);
+}
+
+/* --------------------------------------------------------------------------
+   Features Section
+   -------------------------------------------------------------------------- */
+.features-section {
+  padding: 90px 24px;
+  background-color: var(--bg-alt);
+  border-top: 1px solid var(--border-light);
+  border-bottom: 1px solid var(--border-light);
+}
+
+.section-header-center {
+  text-align: center;
+  max-width: 680px;
+  margin: 0 auto 60px;
+}
+
+.section-heading-large {
+  font-size: clamp(2rem, 3.5vw, 2.75rem);
+  font-weight: 800;
+  color: var(--primary-navy);
+  letter-spacing: -0.02em;
+  margin: 10px 0 16px;
+}
+
+.features-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+  gap: 28px;
+  max-width: 1280px;
+  margin: 0 auto;
+}
+
+.feature-card {
+  background-color: #FFFFFF;
+  border-radius: 20px;
+  padding: 32px 28px;
+  border: 1px solid var(--border-light);
+  box-shadow: var(--shadow-sm);
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.feature-card:hover {
+  transform: translateY(-6px);
+  border-color: var(--secondary-blue);
+  box-shadow: var(--shadow-lg);
+}
+
+.feature-icon-box {
+  width: 48px;
+  height: 48px;
+  border-radius: 14px;
+  background-color: var(--light-bg);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.feature-badge {
+  font-size: 0.75rem;
+  font-weight: 600;
+  padding: 4px 10px;
+  border-radius: 20px;
+  background-color: var(--warm-accent);
+  color: var(--primary-navy);
+  border: 1px solid rgba(46, 74, 113, 0.1);
+}
+
+/* --------------------------------------------------------------------------
+   Workflow Timeline Section
+   -------------------------------------------------------------------------- */
+.workflow-section {
+  padding: 90px 24px;
+  max-width: 1280px;
+  margin: 0 auto;
+}
+
+.workflow-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(170px, 1fr));
+  gap: 16px;
+}
+
+.workflow-card {
+  background-color: #FFFFFF;
+  border-radius: 20px;
+  padding: 24px 18px;
+  border: 1px solid var(--border-light);
+  box-shadow: var(--shadow-sm);
+  text-align: center;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  position: relative;
+  transition: all 0.3s ease;
+  height: 100%;
+}
+
+.workflow-card:hover {
+  transform: translateY(-4px);
+  border-color: var(--cta-alert);
+  box-shadow: var(--shadow-md);
+}
+
+.workflow-step-num {
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  background-color: var(--warm-accent);
+  color: var(--primary-navy);
+  font-size: 0.8rem;
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-bottom: 16px;
+}
+
+.workflow-arrow {
+  position: absolute;
+  right: -14px;
+  top: 50%;
+  transform: translateY(-50%);
+  z-index: 2;
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  background-color: var(--light-bg);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: var(--shadow-sm);
+}
+
+@media (max-width: 990px) {
+  .workflow-arrow {
+    display: none;
+  }
+}
+
+/* --------------------------------------------------------------------------
+   Technology Stack Section
+   -------------------------------------------------------------------------- */
+.tech-section {
+  padding: 90px 24px;
+  background-color: var(--bg-alt);
+  border-top: 1px solid var(--border-light);
+  border-bottom: 1px solid var(--border-light);
+}
+
+.tech-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(340px, 1fr));
+  gap: 24px;
+  max-width: 1280px;
+  margin: 0 auto;
+}
+
+.tech-card {
+  background-color: #FFFFFF;
+  border-radius: 20px;
+  padding: 28px;
+  border: 1px solid var(--border-light);
+  box-shadow: var(--shadow-sm);
+  display: flex;
+  gap: 20px;
+  transition: all 0.3s ease;
+}
+
+.tech-card:hover {
+  transform: translateY(-4px);
+  border-color: var(--secondary-blue);
+  box-shadow: var(--shadow-md);
+}
+
+/* --------------------------------------------------------------------------
+   About Section
+   -------------------------------------------------------------------------- */
+.about-section {
+  padding: 90px 24px;
+  max-width: 1280px;
+  margin: 0 auto;
+}
+
+.about-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+  gap: 50px;
+  align-items: center;
+}
+
+.about-highlight-card {
+  padding: 28px;
+  border-radius: 20px;
+  display: flex;
+  gap: 20px;
+  align-items: flex-start;
+  transition: all 0.3s ease;
+}
+
+/* --------------------------------------------------------------------------
+   Team Section
+   -------------------------------------------------------------------------- */
+.team-section {
+  padding: 90px 24px;
+  background-color: var(--bg-alt);
+  border-top: 1px solid var(--border-light);
+  border-bottom: 1px solid var(--border-light);
+}
+
+.team-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+  gap: 24px;
+  max-width: 1280px;
+  margin: 0 auto;
+}
+
+.team-card {
+  background-color: #FFFFFF;
+  border-radius: 20px;
+  padding: 32px 24px;
+  border: 1px solid var(--border-light);
+  box-shadow: var(--shadow-sm);
+  text-align: center;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  transition: all 0.3s ease;
+}
+
+.team-card:hover {
+  transform: translateY(-6px);
+  border-color: var(--secondary-blue);
+  box-shadow: var(--shadow-md);
+}
+
+.team-avatar {
+  width: 80px;
+  height: 80px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-bottom: 20px;
+  border: 2px solid rgba(255,255,255,0.8);
+  box-shadow: 0 4px 12px rgba(0,0,0,0.05);
+}
+
+/* --------------------------------------------------------------------------
+   Call To Action (CTA) Banner
+   -------------------------------------------------------------------------- */
+.cta-container {
+  padding: 100px 24px;
+  max-width: 1280px;
+  margin: 0 auto;
+}
+
+.cta-banner {
+  border-radius: 32px;
+  background: linear-gradient(135deg, var(--primary-navy) 0%, #1E3350 100%);
+  padding: 70px 36px;
+  text-align: center;
+  color: #FFFFFF;
+  position: relative;
+  overflow: hidden;
+  box-shadow: var(--shadow-lg);
+}
+
+.cta-button {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  padding: 18px 36px;
+  border-radius: 16px;
+  background-color: var(--cta-alert);
+  color: #FFFFFF;
+  font-size: 1.05rem;
+  font-weight: 700;
+  border: none;
+  cursor: pointer;
+  box-shadow: 0 10px 30px rgba(223, 58, 49, 0.45);
+  transition: all 0.3s ease;
+}
+
+.cta-button:hover {
+  background-color: var(--cta-alert-hover);
+  transform: translateY(-2px);
+  box-shadow: 0 14px 36px rgba(223, 58, 49, 0.55);
+}
+
+/* --------------------------------------------------------------------------
+   Screening Modal Form
+   -------------------------------------------------------------------------- */
+.modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: rgba(30, 41, 59, 0.65);
+  backdrop-filter: blur(8px);
+  z-index: 2000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
+}
+
+.modal-content {
+  background-color: #FFFFFF;
+  border-radius: 24px;
+  max-width: 650px;
+  width: 100%;
+  max-height: 90vh;
+  overflow-y: auto;
+  padding: 36px;
+  box-shadow: var(--shadow-lg);
+  border: 1px solid var(--border-medium);
+  position: relative;
+}
+
+.modal-form-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 18px;
+}
+
+.form-input {
+  width: 100%;
+  padding: 12px;
+  border-radius: 10px;
+  border: 1px solid var(--border-medium);
+  margin-top: 6px;
+  font-size: 0.95rem;
+}
+
+@media (max-width: 640px) {
+  .modal-form-grid {
+    grid-template-columns: 1fr;
+  }
+}
