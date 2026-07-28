@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import api from '../api/api';
 import { motion } from 'framer-motion';
 import {
   Activity,
@@ -22,18 +23,16 @@ export default function ScreeningPage({ onBackToHome }) {
     patientId: 'PAT-2027-891',
     name: 'Eleanor Vance',
     age: '58',
-    sex: '1', // 1: Male, 0: Female
-    cp: '2', // Chest Pain type (0-3)
-    trestbps: '142', // Resting BP
-    chol: '254', // Serum Cholesterol
-    fbs: '0', // Fasting blood sugar > 120 (1=true, 0=false)
-    restecg: '1', // Resting ECG
-    thalach: '148', // Max heart rate
-    exang: '1', // Exercise induced angina
-    oldpeak: '2.3', // ST depression
-    slope: '1', // ST slope
-    ca: '1', // Major vessels (0-3)
-    thal: '2', // Thalassemia
+    gender: '1', // 1: Male, 2: Female
+    height: '165',
+    weight: '70',
+    ap_hi: '130',
+    ap_lo: '80',
+    cholesterol: '1', // 1: Normal, 2: Above Normal, 3: Well Above Normal
+    gluc: '1',        // 1: Normal, 2: Above Normal, 3: Well Above Normal
+    smoke: '0',       // 0: No, 1: Yes
+    alco: '0',        // 0: No, 1: Yes
+    active: '1',      // 0: No, 1: Yes
   });
 
   const [analyzing, setAnalyzing] = useState(false);
@@ -43,49 +42,50 @@ export default function ScreeningPage({ onBackToHome }) {
     setFormData((prev) => ({ ...prev, [field]: value }));
   };
 
-  const handleRunScreening = (e) => {
+  const handleRunScreening = async (e) => {
     e.preventDefault();
     setAnalyzing(true);
 
-    // Simulate machine learning model inference pipeline
-    setTimeout(() => {
+    try {
+      const payload = {
+        age: parseFloat(formData.age),
+        gender: parseInt(formData.gender),
+        height: parseFloat(formData.height),
+        weight: parseFloat(formData.weight),
+        ap_hi: parseInt(formData.ap_hi),
+        ap_lo: parseInt(formData.ap_lo),
+        cholesterol: parseInt(formData.cholesterol),
+        gluc: parseInt(formData.gluc),
+        smoke: parseInt(formData.smoke),
+        alco: parseInt(formData.alco),
+        active: parseInt(formData.active),
+      };
+
+      const response = await api.post("/predict", payload);
+
+      if (response.data && response.data.status === "success") {
+        const result = response.data;
+        setAnalysisResult({
+          probability: `${result.risk_score}%`,
+          rawScore: result.risk_score,
+          riskLevel: result.risk_level,
+          confidence: result.confidence || '96.8%',
+          primaryDrivers: result.primary_drivers || [],
+          recommendations: result.recommendations || [],
+          timestamp: new Date().toLocaleString(),
+        });
+      } else {
+        throw new Error("Invalid response status");
+      }
+    } catch (error) {
+      console.error("API error:", error);
+      alert(
+        error.response?.data?.detail ||
+        "Failed to connect to the prediction server. Please verify that the FastAPI backend is running on http://127.0.0.1:8000."
+      );
+    } finally {
       setAnalyzing(false);
-
-      // Simple clinical heuristic calculation based on parameters
-      const ageNum = parseInt(formData.age) || 50;
-      const bpNum = parseInt(formData.trestbps) || 120;
-      const cholNum = parseInt(formData.chol) || 200;
-      const oldpeakNum = parseFloat(formData.oldpeak) || 0;
-
-      let score = 35;
-      if (ageNum > 55) score += 15;
-      if (bpNum > 135) score += 18;
-      if (cholNum > 240) score += 16;
-      if (oldpeakNum > 1.5) score += 20;
-
-      score = Math.min(Math.max(score, 12), 94);
-      const riskLevel = score >= 75 ? 'High Risk' : score >= 45 ? 'Moderate Risk' : 'Low Risk';
-
-      setAnalysisResult({
-        probability: `${score}%`,
-        rawScore: score,
-        riskLevel,
-        confidence: '96.8%',
-        primaryDrivers: [
-          bpNum > 135 ? `Elevated Resting Blood Pressure (${bpNum} mmHg)` : null,
-          cholNum > 240 ? `Elevated Serum Cholesterol (${cholNum} mg/dL)` : null,
-          oldpeakNum > 1.5 ? `ST Segment Depression (${oldpeakNum} mm)` : null,
-          formData.exang === '1' ? 'Exercise-Induced Angina Present' : null,
-        ].filter(Boolean),
-        recommendations: [
-          'Schedule targeted 12-lead electrocardiogram (ECG) consultation within 48 hours.',
-          'Consider lipid-lowering pharmacotherapy and ambulatory blood pressure monitoring.',
-          'Advise dietary modification reducing saturated fats and sodium intake.',
-          'Schedule 30-day follow-up cardiac risk re-evaluation.',
-        ],
-        timestamp: new Date().toLocaleString(),
-      });
-    }, 1000);
+    }
   };
 
   return (
@@ -144,27 +144,51 @@ export default function ScreeningPage({ onBackToHome }) {
               onClick={() => {
                 setFormData({
                   patientId: `PAT-2027-${Math.floor(100 + Math.random() * 900)}`,
-                  name: 'Demo Patient',
-                  age: '62',
-                  sex: '1',
-                  cp: '3',
-                  trestbps: '150',
-                  chol: '268',
-                  fbs: '1',
-                  restecg: '1',
-                  thalach: '135',
-                  exang: '1',
-                  oldpeak: '2.8',
-                  slope: '2',
-                  ca: '2',
-                  thal: '3',
+                  name: 'Eleanor Vance (Low Risk)',
+                  age: '30',
+                  gender: '2',
+                  height: '160',
+                  weight: '55',
+                  ap_hi: '110',
+                  ap_lo: '70',
+                  cholesterol: '1',
+                  gluc: '1',
+                  smoke: '0',
+                  alco: '0',
+                  active: '1',
                 });
                 setAnalysisResult(null);
               }}
+              type="button"
               className="text-xs font-semibold px-4 py-2.5 rounded-xl border border-[#003631]/20 hover:bg-[#003631]/5 transition-colors text-[#003631] cursor-pointer flex items-center gap-1.5"
             >
               <RefreshCw className="w-3.5 h-3.5" />
-              Load High-Risk Demo Case
+              Load Low-Risk Case
+            </button>
+            <button
+              onClick={() => {
+                setFormData({
+                  patientId: `PAT-2027-${Math.floor(100 + Math.random() * 900)}`,
+                  name: 'Demo Patient (High Risk)',
+                  age: '62',
+                  gender: '1',
+                  height: '172',
+                  weight: '94',
+                  ap_hi: '160',
+                  ap_lo: '100',
+                  cholesterol: '3',
+                  gluc: '2',
+                  smoke: '1',
+                  alco: '1',
+                  active: '0',
+                });
+                setAnalysisResult(null);
+              }}
+              type="button"
+              className="text-xs font-semibold px-4 py-2.5 rounded-xl border border-[#003631]/20 hover:bg-[#003631]/5 transition-colors text-[#003631] cursor-pointer flex items-center gap-1.5"
+            >
+              <RefreshCw className="w-3.5 h-3.5" />
+              Load High-Risk Case
             </button>
           </div>
         </div>
@@ -209,46 +233,56 @@ export default function ScreeningPage({ onBackToHome }) {
                 <div>
                   <label className="block text-xs font-bold text-[#003631] mb-1.5">Biological Sex</label>
                   <select
-                    value={formData.sex}
-                    onChange={(e) => handleInputChange('sex', e.target.value)}
+                    value={formData.gender}
+                    onChange={(e) => handleInputChange('gender', e.target.value)}
                     className="w-full px-3.5 py-2.5 border border-[#E4E9E5] rounded-xl text-sm font-medium focus:outline-none focus:border-[#003631] bg-[#FAFAF5]"
                   >
                     <option value="1">Male</option>
-                    <option value="0">Female</option>
+                    <option value="2">Female</option>
                   </select>
                 </div>
               </div>
 
-              {/* Hemodynamic Metrics */}
+              {/* Physiological Metrics */}
               <div className="space-y-3 pt-2">
-                <h3 className="text-xs font-bold uppercase tracking-wider text-[#003631]/70">Hemodynamic Metrics</h3>
-                <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                <h3 className="text-xs font-bold uppercase tracking-wider text-[#003631]/70">Physiological Metrics</h3>
+                <div className="grid grid-cols-1 sm:grid-cols-4 gap-4">
                   <div>
-                    <label className="block text-xs font-semibold text-[#003631] mb-1">Resting BP (mmHg)</label>
+                    <label className="block text-xs font-semibold text-[#003631] mb-1">Height (cm)</label>
                     <input
                       type="number"
-                      value={formData.trestbps}
-                      onChange={(e) => handleInputChange('trestbps', e.target.value)}
+                      value={formData.height}
+                      onChange={(e) => handleInputChange('height', e.target.value)}
                       className="w-full px-3.5 py-2.5 border border-[#E4E9E5] rounded-xl text-sm focus:outline-none focus:border-[#003631]"
                       required
                     />
                   </div>
                   <div>
-                    <label className="block text-xs font-semibold text-[#003631] mb-1">Cholesterol (mg/dL)</label>
+                    <label className="block text-xs font-semibold text-[#003631] mb-1">Weight (kg)</label>
                     <input
                       type="number"
-                      value={formData.chol}
-                      onChange={(e) => handleInputChange('chol', e.target.value)}
+                      value={formData.weight}
+                      onChange={(e) => handleInputChange('weight', e.target.value)}
                       className="w-full px-3.5 py-2.5 border border-[#E4E9E5] rounded-xl text-sm focus:outline-none focus:border-[#003631]"
                       required
                     />
                   </div>
                   <div>
-                    <label className="block text-xs font-semibold text-[#003631] mb-1">Max HR Achieved</label>
+                    <label className="block text-xs font-semibold text-[#003631] mb-1">Systolic BP (mmHg)</label>
                     <input
                       type="number"
-                      value={formData.thalach}
-                      onChange={(e) => handleInputChange('thalach', e.target.value)}
+                      value={formData.ap_hi}
+                      onChange={(e) => handleInputChange('ap_hi', e.target.value)}
+                      className="w-full px-3.5 py-2.5 border border-[#E4E9E5] rounded-xl text-sm focus:outline-none focus:border-[#003631]"
+                      required
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-xs font-semibold text-[#003631] mb-1">Diastolic BP (mmHg)</label>
+                    <input
+                      type="number"
+                      value={formData.ap_lo}
+                      onChange={(e) => handleInputChange('ap_lo', e.target.value)}
                       className="w-full px-3.5 py-2.5 border border-[#E4E9E5] rounded-xl text-sm focus:outline-none focus:border-[#003631]"
                       required
                     />
@@ -256,57 +290,44 @@ export default function ScreeningPage({ onBackToHome }) {
                 </div>
               </div>
 
-              {/* Clinical & ECG Attributes */}
+              {/* Diagnostic & Lifestyle attributes */}
               <div className="space-y-3 pt-2">
-                <h3 className="text-xs font-bold uppercase tracking-wider text-[#003631]/70">Clinical Diagnostic Findings</h3>
+                <h3 className="text-xs font-bold uppercase tracking-wider text-[#003631]/70">Diagnostic & Lifestyle Attributes</h3>
                 
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   <div>
-                    <label className="block text-xs font-semibold text-[#003631] mb-1">Chest Pain Type</label>
+                    <label className="block text-xs font-semibold text-[#003631] mb-1">Cholesterol Level</label>
                     <select
-                      value={formData.cp}
-                      onChange={(e) => handleInputChange('cp', e.target.value)}
+                      value={formData.cholesterol}
+                      onChange={(e) => handleInputChange('cholesterol', e.target.value)}
                       className="w-full px-3.5 py-2.5 border border-[#E4E9E5] rounded-xl text-sm focus:outline-none focus:border-[#003631]"
                     >
-                      <option value="0">Typical Angina</option>
-                      <option value="1">Atypical Angina</option>
-                      <option value="2">Non-Anginal Pain</option>
-                      <option value="3">Asymptomatic</option>
+                      <option value="1">Normal</option>
+                      <option value="2">Above Normal</option>
+                      <option value="3">Well Above Normal</option>
                     </select>
                   </div>
 
                   <div>
-                    <label className="block text-xs font-semibold text-[#003631] mb-1">Resting ECG Results</label>
+                    <label className="block text-xs font-semibold text-[#003631] mb-1">Glucose Level</label>
                     <select
-                      value={formData.restecg}
-                      onChange={(e) => handleInputChange('restecg', e.target.value)}
+                      value={formData.gluc}
+                      onChange={(e) => handleInputChange('gluc', e.target.value)}
                       className="w-full px-3.5 py-2.5 border border-[#E4E9E5] rounded-xl text-sm focus:outline-none focus:border-[#003631]"
                     >
-                      <option value="0">Normal</option>
-                      <option value="1">ST-T Wave Abnormality</option>
-                      <option value="2">Left Ventricular Hypertrophy</option>
+                      <option value="1">Normal</option>
+                      <option value="2">Above Normal</option>
+                      <option value="3">Well Above Normal</option>
                     </select>
                   </div>
                 </div>
 
                 <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
                   <div>
-                    <label className="block text-xs font-semibold text-[#003631] mb-1">Fasting BS &gt; 120 mg/dL</label>
+                    <label className="block text-xs font-semibold text-[#003631] mb-1">Smoking Status</label>
                     <select
-                      value={formData.fbs}
-                      onChange={(e) => handleInputChange('fbs', e.target.value)}
-                      className="w-full px-3.5 py-2.5 border border-[#E4E9E5] rounded-xl text-sm focus:outline-none focus:border-[#003631]"
-                    >
-                      <option value="0">False (&lt;120 mg/dL)</option>
-                      <option value="1">True (&gt;120 mg/dL)</option>
-                    </select>
-                  </div>
-
-                  <div>
-                    <label className="block text-xs font-semibold text-[#003631] mb-1">Exercise Angina</label>
-                    <select
-                      value={formData.exang}
-                      onChange={(e) => handleInputChange('exang', e.target.value)}
+                      value={formData.smoke}
+                      onChange={(e) => handleInputChange('smoke', e.target.value)}
                       className="w-full px-3.5 py-2.5 border border-[#E4E9E5] rounded-xl text-sm focus:outline-none focus:border-[#003631]"
                     >
                       <option value="0">No</option>
@@ -315,15 +336,27 @@ export default function ScreeningPage({ onBackToHome }) {
                   </div>
 
                   <div>
-                    <label className="block text-xs font-semibold text-[#003631] mb-1">ST Depression (Oldpeak)</label>
-                    <input
-                      type="number"
-                      step="0.1"
-                      value={formData.oldpeak}
-                      onChange={(e) => handleInputChange('oldpeak', e.target.value)}
+                    <label className="block text-xs font-semibold text-[#003631] mb-1">Alcohol Intake</label>
+                    <select
+                      value={formData.alco}
+                      onChange={(e) => handleInputChange('alco', e.target.value)}
                       className="w-full px-3.5 py-2.5 border border-[#E4E9E5] rounded-xl text-sm focus:outline-none focus:border-[#003631]"
-                      required
-                    />
+                    >
+                      <option value="0">No</option>
+                      <option value="1">Yes</option>
+                    </select>
+                  </div>
+
+                  <div>
+                    <label className="block text-xs font-semibold text-[#003631] mb-1">Physical Activity</label>
+                    <select
+                      value={formData.active}
+                      onChange={(e) => handleInputChange('active', e.target.value)}
+                      className="w-full px-3.5 py-2.5 border border-[#E4E9E5] rounded-xl text-sm focus:outline-none focus:border-[#003631]"
+                    >
+                      <option value="1">Active</option>
+                      <option value="0">Inactive</option>
+                    </select>
                   </div>
                 </div>
               </div>
