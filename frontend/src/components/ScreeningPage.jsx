@@ -104,11 +104,9 @@ export default function ScreeningPage({ onBackToHome }) {
             </button>
             <div className="h-6 w-px bg-[#FFEDA8]/20 hidden sm:block"></div>
             <div className="flex items-center gap-2.5">
-              <div className="w-8 h-8 rounded-lg bg-[#FFEDA8] text-[#003631] flex items-center justify-center font-bold">
-                <Activity className="w-4 h-4 stroke-[2.5]" />
-              </div>
+              <img src="/logo.jpeg" alt="NovusAI Logo" className="w-8 h-8 object-contain rounded-md" />
               <span className="text-lg font-bold tracking-tight text-white">
-                Cardio<span className="text-[#FFEDA8]">Vision</span> Screening Engine
+                Novus<span className="text-[#FFEDA8]">AI</span> Screening Engine
               </span>
             </div>
           </div>

@@ -64,11 +64,9 @@ export default function Navbar({ onGetStarted, onGoHome, isScreeningPage }) {
           }}
           className="flex items-center gap-2.5 group focus:outline-none cursor-pointer"
         >
-          <div className="w-10 h-10 rounded-xl bg-[#003631] text-[#FFEDA8] flex items-center justify-center transition-transform group-hover:scale-105">
-            <Activity className="w-5 h-5 stroke-[2.5]" />
-          </div>
+          <img src="/logo.jpeg" alt="NovusAI Logo" className="w-14 h-14 object-contain rounded-lg transition-transform group-hover:scale-105" />
           <span className="text-xl font-bold tracking-tight text-[#003631]">
-            Cardio<span className="text-[#003631]">Vision</span>
+            Novus<span className="text-[#003631]">AI</span>
           </span>
         </a>
 

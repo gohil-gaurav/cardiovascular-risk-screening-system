@@ -20,11 +20,9 @@ export default function Footer({ onGetStarted, onGoHome }) {
           {/* Brand Col */}
           <div className="md:col-span-5 space-y-4">
             <div className="flex items-center gap-2.5">
-              <div className="w-9 h-9 rounded-xl bg-[#FFEDA8] text-[#003631] flex items-center justify-center font-bold">
-                <Activity className="w-5 h-5 stroke-[2.5]" />
-              </div>
+              <img src="/logo.jpeg" alt="NovusAI Logo" className="w-9 h-9 object-contain rounded-md" />
               <span className="text-xl font-bold tracking-tight text-white">
-                Cardio<span className="text-[#FFEDA8]">Vision</span>
+                Novus<span className="text-[#FFEDA8]">AI</span>
               </span>
             </div>
             <p className="text-sm text-[#FFEDA8]/70 leading-relaxed max-w-sm">
@@ -78,7 +76,7 @@ export default function Footer({ onGetStarted, onGoHome }) {
                   href="#privacy"
                   onClick={(e) => {
                     e.preventDefault();
-                    alert("Privacy Policy: CardioVision adheres to strict HIPAA & GDPR data processing standards.");
+                    alert("Privacy Policy: NovusAI adheres to strict HIPAA & GDPR data processing standards.");
                   }}
                   className="hover:text-white transition-colors"
                 >
@@ -104,7 +102,7 @@ export default function Footer({ onGetStarted, onGoHome }) {
 
         {/* Bottom copyright */}
         <div className="pt-8 flex flex-col sm:flex-row items-center justify-between gap-4 text-xs text-[#FFEDA8]/60">
-          <p>© 2027 CardioVision. All rights reserved.</p>
+          <p>© 2027 NovusAI. All rights reserved.</p>
           <p>Designed for Hospitals, Clinicians & Healthcare Researchers</p>
         </div>
       </div>

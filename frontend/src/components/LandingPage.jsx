@@ -323,7 +323,7 @@ export default function LandingPage({ onStartScreening }) {
           
           <div className="text-center max-w-2xl mx-auto space-y-4">
             <h2 className="text-3xl sm:text-4xl font-extrabold text-[#003631] tracking-tight">
-              How CardioVision Works
+              How NovusAI Works
             </h2>
             <p className="text-base text-[#003631]/70">
               A simple 4-step workflow that integrates seamlessly into clinical patient care.
@@ -416,7 +416,7 @@ export default function LandingPage({ onStartScreening }) {
       </section>
 
       {/* ------------------------------------------------------------------ */}
-      {/* 6. WHY CHOOSE CARDIOVISION                                         */}
+      {/* 6. WHY CHOOSE NOVUSAI                                              */}
       {/* ------------------------------------------------------------------ */}
       <section id="why-choose" className="py-24 bg-[#FAFAF5] border-b border-[#E4E9E5]">
         <div className="max-w-7xl mx-auto px-6 sm:px-8">
@@ -425,7 +425,7 @@ export default function LandingPage({ onStartScreening }) {
             {/* Left Checklist */}
             <div className="lg:col-span-5 space-y-8">
               <div className="space-y-4">
-                <span className="text-xs font-bold uppercase tracking-wider text-[#003631] bg-[#FFEDA8] px-3 py-1 rounded-md">Why Choose CardioVision</span>
+                <span className="text-xs font-bold uppercase tracking-wider text-[#003631] bg-[#FFEDA8] px-3 py-1 rounded-md">Why Choose NovusAI</span>
                 <h2 className="text-3xl sm:text-4xl font-extrabold text-[#003631] tracking-tight">
                   Intelligent Risk Screening Built for Healthcare
                 </h2>
@@ -462,7 +462,7 @@ export default function LandingPage({ onStartScreening }) {
                   <span className="w-2.5 h-2.5 rounded-full bg-red-500"></span>
                   <span className="w-2.5 h-2.5 rounded-full bg-amber-500"></span>
                   <span className="w-2.5 h-2.5 rounded-full bg-emerald-500"></span>
-                  <span className="text-[11px] font-mono text-[#FFEDA8]/80 ml-2">cardiovision.health/dashboard</span>
+                  <span className="text-[11px] font-mono text-[#FFEDA8]/80 ml-2">novusai.health/dashboard</span>
                 </div>
 
                 {/* Laptop Display Content */}
