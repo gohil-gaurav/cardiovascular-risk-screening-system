@@ -79,9 +79,10 @@ export default function ScreeningPage({ onBackToHome }) {
       }
     } catch (error) {
       console.error("API error:", error);
+      const targetUrl = api.defaults.baseURL || "http://127.0.0.1:8000";
       alert(
         error.response?.data?.detail ||
-        "Failed to connect to the prediction server. Please verify that the FastAPI backend is running on http://127.0.0.1:8000."
+        `Failed to connect to the prediction server. Please verify that the FastAPI backend is running at ${targetUrl}.`
       );
     } finally {
       setAnalyzing(false);
