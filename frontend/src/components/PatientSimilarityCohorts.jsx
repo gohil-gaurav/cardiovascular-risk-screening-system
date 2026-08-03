@@ -42,10 +42,10 @@ const tierColor = (tier) => ({
   textHex:  tier === 'High Risk' ? '#B91C1C'  : tier === 'Moderate Risk' ? '#B45309'  : '#065F46',
   borderHex:tier === 'High Risk' ? '#FECACA'  : tier === 'Moderate Risk' ? '#FDE68A'  : '#6EE7B7',
   gradient: tier === 'High Risk'
-    ? 'linear-gradient(135deg,#B91C1C,#9F1239)'
+    ? 'linear-gradient(135deg,#7F1D1D,#991B1B)'
     : tier === 'Moderate Risk'
-    ? 'linear-gradient(135deg,#D97706,#C2410C)'
-    : 'linear-gradient(135deg,#059669,#0F766E)',
+    ? 'linear-gradient(135deg,#78350F,#92400E)'
+    : 'linear-gradient(135deg,#1B2B6B,#2D3F8F)',
   dot:      tier === 'High Risk' ? '#EF4444' : tier === 'Moderate Risk' ? '#F59E0B' : '#22C55E',
 });
 
@@ -142,7 +142,7 @@ export default function PatientSimilarityCohorts({
   const highPts = generatePoints(220,  65, 30, 9012);
 
   return (
-    <div className="min-h-screen bg-[#F0F4F8] text-slate-800 p-4 md:p-8 space-y-8 font-sans">
+    <div className="min-h-screen font-sans p-4 md:p-8 space-y-8" style={{ background: '#E8ECF2', color: '#1A2440' }}>
 
       {/* ── Page Header ─────────────────────────────────────────────── */}
       <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 border-b border-slate-200 pb-5">

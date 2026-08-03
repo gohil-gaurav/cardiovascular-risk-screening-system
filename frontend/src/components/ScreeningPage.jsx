@@ -473,418 +473,311 @@ export default function ScreeningPage({ onBackToHome }) {
     .sort((a, b) => a.shap_value - b.shap_value);
 
   return (
-    <div className="min-h-screen bg-[#FAFAF5] text-[#003631] font-sans pb-24 relative selection:bg-[#FFEDA8]">
-      {/* Dynamic Printing Style overrides */}
+    <div className="min-h-screen font-sans pb-24 relative" style={{ background: '#E8ECF2', color: '#1A2440' }}>
+      {/* Print styles */}
       <style dangerouslySetInnerHTML={{ __html: `
         @media print {
-          body {
-            background-color: white !important;
-            color: black !important;
-          }
-          header, footer, form, button, .no-print {
-            display: none !important;
-          }
-          .print-container {
-            width: 100% !important;
-            max-width: 100% !important;
-            padding: 0 !important;
-            margin: 0 !important;
-            box-shadow: none !important;
-            border: none !important;
-          }
-          .print-card {
-            page-break-inside: avoid !important;
-            break-inside: avoid !important;
-            box-shadow: none !important;
-            border: 1px solid #E2E8F0 !important;
-            background: white !important;
-            padding: 16px !important;
-            margin-bottom: 16px !important;
-          }
+          body { background-color: white !important; color: black !important; }
+          header, footer, form, button, .no-print { display: none !important; }
+          .print-container { width: 100% !important; max-width: 100% !important; padding: 0 !important; margin: 0 !important; }
+          .print-card { page-break-inside: avoid !important; break-inside: avoid !important; border: 1px solid #D8E1ED !important; background: white !important; padding: 16px !important; margin-bottom: 16px !important; }
         }
       `}} />
 
-      {/* SCREENING HEADER NAVBAR */}
-      <header className="bg-[#003631] text-[#FFEDA8] sticky top-0 z-50 border-b border-[#002623] shadow-md no-print">
-        <div className="max-w-7xl mx-auto px-6 sm:px-8 h-20 flex items-center justify-between">
+      {/* ── NAVBAR ─────────────────────────────────────────────────── */}
+      <header className="sticky top-0 z-50 no-print"
+        style={{ background: '#FFFFFF', borderBottom: '1px solid #DDE4EE', boxShadow: '0 1px 8px rgba(26,36,64,0.06)' }}>
+        <div className="max-w-7xl mx-auto px-6 sm:px-8 h-16 flex items-center justify-between">
           <div className="flex items-center gap-4">
-            <button
-              onClick={onBackToHome}
-              className="inline-flex items-center gap-2 bg-[#002623] hover:bg-[#004a44] text-[#FFEDA8] text-xs font-semibold px-4 py-2.5 rounded-xl transition-all border border-[#FFEDA8]/20 cursor-pointer"
-            >
+            <button onClick={onBackToHome}
+              className="inline-flex items-center gap-2 text-xs font-semibold px-3.5 py-2 rounded-xl transition-all cursor-pointer border"
+              style={{ background: '#F3F6FA', color: '#637082', borderColor: '#D8E1ED' }}>
               <ArrowLeft className="w-4 h-4" />
-              Back to Home
+              Back
             </button>
-            <div className="h-6 w-px bg-[#FFEDA8]/20 hidden sm:block"></div>
+            <div className="h-5 w-px hidden sm:block" style={{ background: '#DDE4EE' }}></div>
             <div className="flex items-center gap-2.5">
-              <span className="p-1.5 bg-emerald-500 rounded-lg">
-                <Brain className="w-5 h-5 text-[#003631]" />
+              <span className="w-8 h-8 rounded-xl flex items-center justify-center shrink-0"
+                style={{ background: 'linear-gradient(135deg,#3B7CF4,#6355F5)' }}>
+                <Brain className="w-4 h-4 text-white" />
               </span>
-              <span className="text-lg font-bold tracking-tight text-white">
-                Novus<span className="text-[#FFEDA8]">AI</span> Clinical Engine
+              <span className="text-sm font-extrabold tracking-tight" style={{ color: '#1B2B6B' }}>
+                NovusAI <span style={{ color: '#3B7CF4' }}>Clinical</span>
               </span>
             </div>
           </div>
 
           <div className="flex items-center gap-3">
-            <span className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-full bg-[#FFEDA8]/10 text-[#FFEDA8] text-xs font-medium border border-[#FFEDA8]/20">
-              <span className="w-2.5 h-2.5 rounded-full bg-emerald-400 animate-pulse"></span>
-              Dual Consensus Active
+            <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-semibold"
+              style={{ background: '#EEF3FF', color: '#1B2B6B', border: '1px solid #C7D7F8' }}>
+              <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
+              System Online
             </span>
           </div>
         </div>
       </header>
 
-      {/* PAGE CONTAINER */}
-      <main className="max-w-7xl mx-auto px-6 sm:px-8 pt-8 space-y-8">
-        
-        {/* SECTION 1: HERO HEADER */}
-        <div className="bg-white border border-[#E4E9E5] rounded-3xl p-6 sm:p-8 shadow-xs flex flex-col lg:flex-row lg:items-center justify-between gap-6 no-print">
+      {/* ── MAIN ───────────────────────────────────────────────────── */}
+      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-8 space-y-6">
+
+        {/* HERO CARD */}
+        <div className="bg-white rounded-3xl p-6 sm:p-8 flex flex-col lg:flex-row lg:items-center justify-between gap-6 no-print"
+          style={{ border: '1px solid #DDE4EE', boxShadow: '0 2px 16px rgba(26,36,64,0.06)' }}>
           <div className="space-y-3">
-            <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-[#FFEDA8] text-[#003631] text-xs font-extrabold tracking-wide uppercase">
+            <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full text-xs font-bold tracking-wide uppercase border"
+              style={{ background: '#EEF3FF', color: '#1B2B6B', borderColor: '#C7D7F8' }}>
               <Stethoscope className="w-3.5 h-3.5" />
-              Explainable AI Clinical Decision Platform
+              HealthTech · AI Clinical Decision Platform
             </div>
-            <h1 className="text-3xl sm:text-4xl font-extrabold text-[#003631] tracking-tight">
-              Patient Cardiovascular Risk Screening System
+            <h1 className="text-2xl sm:text-3xl font-extrabold tracking-tight" style={{ color: '#1A2440' }}>
+              Patient Cardiovascular Risk Screening
             </h1>
-            <p className="text-sm sm:text-base text-[#003631]/80 max-w-3xl leading-relaxed">
-              Predict cardiovascular disease risk using Artificial Intelligence and explain every prediction with Explainable AI (SHAP).
+            <p className="text-sm leading-relaxed max-w-2xl" style={{ color: '#637082' }}>
+              Evaluate cardiovascular disease risk using Artificial Intelligence — with clear, plain-language explanations for every result.
             </p>
           </div>
-
-          <div className="flex flex-row lg:flex-col sm:flex-row gap-3 self-start lg:self-center shrink-0">
-            <button
-              onClick={() => handleLoadTemplate('low')}
-              type="button"
-              className="text-xs font-bold px-4 py-3 rounded-xl border border-[#003631]/20 hover:bg-[#003631]/5 transition-all text-[#003631] cursor-pointer flex items-center gap-2 bg-emerald-50/50 hover:border-emerald-500/50"
-            >
-              <UserCheck className="w-4 h-4 text-emerald-600" />
-              Load Low Risk Example
+          <div className="flex flex-row lg:flex-col sm:flex-row gap-3 shrink-0">
+            <button onClick={() => handleLoadTemplate('low')} type="button"
+              className="text-xs font-bold px-4 py-2.5 rounded-xl border transition-all cursor-pointer flex items-center gap-2"
+              style={{ background: '#F0FDF9', color: '#065F46', borderColor: '#A7F3D0' }}>
+              <UserCheck className="w-4 h-4" />Low Risk Example
             </button>
-            <button
-              onClick={() => handleLoadTemplate('high')}
-              type="button"
-              className="text-xs font-bold px-4 py-3 rounded-xl border border-[#003631]/20 hover:bg-[#003631]/5 transition-all text-[#003631] cursor-pointer flex items-center gap-2 bg-rose-50/50 hover:border-rose-500/50"
-            >
-              <AlertTriangle className="w-4 h-4 text-rose-600" />
-              Load High Risk Example
+            <button onClick={() => handleLoadTemplate('high')} type="button"
+              className="text-xs font-bold px-4 py-2.5 rounded-xl border transition-all cursor-pointer flex items-center gap-2"
+              style={{ background: '#FEF2F2', color: '#991B1B', borderColor: '#FECACA' }}>
+              <AlertTriangle className="w-4 h-4" />High Risk Example
             </button>
           </div>
         </div>
 
-        {/* SECTION 2: PATIENT INFORMATION FORM */}
-        <div className="bg-white border border-[#E4E9E5] rounded-3xl p-6 sm:p-8 shadow-xs space-y-6 no-print">
-          <div className="flex items-center justify-between pb-4 border-b border-[#E4E9E5]">
+        {/* PATIENT FORM */}
+        <div className="bg-white rounded-3xl p-6 sm:p-8 space-y-6 no-print"
+          style={{ border: '1px solid #DDE4EE', boxShadow: '0 2px 16px rgba(26,36,64,0.06)' }}>
+          <div className="flex items-center justify-between pb-4 border-b" style={{ borderColor: '#EDF0F7' }}>
             <div className="flex items-center gap-2.5">
-              <FileText className="w-5.5 h-5.5 text-[#003631]" />
-              <h2 className="text-lg font-bold text-[#003631]">Patient Information Form</h2>
+              <div className="p-2 rounded-xl" style={{ background: '#EEF3FF' }}>
+                <FileText className="w-4 h-4" style={{ color: '#3B7CF4' }} />
+              </div>
+              <h2 className="text-base font-bold" style={{ color: '#1A2440' }}>Patient Information Form</h2>
             </div>
-            <span className="text-xs font-mono font-bold bg-[#FAFAF5] px-3 py-1 rounded-lg border border-[#E4E9E5] text-[#003631]/60">
-              TELEMETRY ID: {formData.patientId}
+            <span className="text-[10px] font-mono font-bold px-3 py-1.5 rounded-lg border tracking-wider"
+              style={{ background: '#F3F6FA', color: '#9DAABB', borderColor: '#D8E1ED' }}>
+              ID: {formData.patientId}
             </span>
           </div>
 
           <form onSubmit={handleRunScreening} className="space-y-6">
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-              {/* Basic Fields */}
-              <div>
-                <label className="block text-xs font-extrabold text-[#003631] mb-2 uppercase tracking-wider">Patient Full Name</label>
-                <input
-                  type="text"
-                  value={formData.name}
-                  onChange={(e) => handleInputChange('name', e.target.value)}
-                  className="w-full px-4 py-3 border border-[#E4E9E5] rounded-xl text-sm font-semibold focus:outline-none focus:ring-2 focus:ring-[#003631]/20 focus:border-[#003631] bg-[#FAFAF5] transition-all"
-                  required
-                />
-              </div>
-
-              <div>
-                <label className="block text-xs font-extrabold text-[#003631] mb-2 uppercase tracking-wider">Age (Years)</label>
-                <input
-                  type="number"
-                  value={formData.age}
-                  onChange={(e) => handleInputChange('age', e.target.value)}
-                  className="w-full px-4 py-3 border border-[#E4E9E5] rounded-xl text-sm font-semibold focus:outline-none focus:ring-2 focus:ring-[#003631]/20 focus:border-[#003631] bg-[#FAFAF5] transition-all"
-                  required
-                  min="1"
-                  max="120"
-                />
-              </div>
-
-              <div>
-                <label className="block text-xs font-extrabold text-[#003631] mb-2 uppercase tracking-wider">Gender</label>
-                <select
-                  value={formData.gender}
-                  onChange={(e) => handleInputChange('gender', e.target.value)}
-                  className="w-full px-4 py-3 border border-[#E4E9E5] rounded-xl text-sm font-semibold focus:outline-none focus:ring-2 focus:ring-[#003631]/20 focus:border-[#003631] bg-[#FAFAF5] transition-all"
-                >
-                  <option value="1">Male</option>
-                  <option value="2">Female</option>
-                </select>
+            {/* Patient Details */}
+            <div>
+              <h3 className="text-[10px] font-black uppercase tracking-widest mb-3" style={{ color: '#9DAABB' }}>Patient Details</h3>
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                <div>
+                  <label className="block text-xs font-semibold mb-1.5" style={{ color: '#637082' }}>Full Name</label>
+                  <input type="text" value={formData.name} onChange={(e) => handleInputChange('name', e.target.value)}
+                    className="w-full px-3.5 py-2.5 rounded-xl text-sm font-semibold transition-all outline-none border"
+                    style={{ background: '#F3F6FA', borderColor: '#D8E1ED', color: '#1A2440' }} required />
+                </div>
+                <div>
+                  <label className="block text-xs font-semibold mb-1.5" style={{ color: '#637082' }}>Age (Years)</label>
+                  <input type="number" value={formData.age} onChange={(e) => handleInputChange('age', e.target.value)}
+                    className="w-full px-3.5 py-2.5 rounded-xl text-sm font-semibold transition-all outline-none border"
+                    style={{ background: '#F3F6FA', borderColor: '#D8E1ED', color: '#1A2440' }} required min="1" max="120" />
+                </div>
+                <div>
+                  <label className="block text-xs font-semibold mb-1.5" style={{ color: '#637082' }}>Gender</label>
+                  <select value={formData.gender} onChange={(e) => handleInputChange('gender', e.target.value)}
+                    className="w-full px-3.5 py-2.5 rounded-xl text-sm font-semibold transition-all outline-none border"
+                    style={{ background: '#F3F6FA', borderColor: '#D8E1ED', color: '#1A2440' }}>
+                    <option value="1">Male</option>
+                    <option value="2">Female</option>
+                  </select>
+                </div>
               </div>
             </div>
 
-            {/* Physiological attributes */}
-            <div className="pt-2">
-              <h3 className="text-xs font-extrabold text-[#003631]/50 uppercase tracking-widest mb-4">Physiological Measurements</h3>
-              <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-6">
+            {/* Physiological */}
+            <div>
+              <h3 className="text-[10px] font-black uppercase tracking-widest mb-3" style={{ color: '#9DAABB' }}>Physiological Measurements</h3>
+              <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4">
                 <div>
-                  <label className="block text-xs font-bold text-[#003631] mb-2">Height (cm)</label>
-                  <input
-                    type="number"
-                    value={formData.height}
-                    onChange={(e) => handleInputChange('height', e.target.value)}
-                    className="w-full px-4 py-3 border border-[#E4E9E5] rounded-xl text-sm font-medium focus:outline-none focus:border-[#003631] transition-all"
-                    required
-                  />
+                  <label className="block text-xs font-semibold mb-1.5" style={{ color: '#637082' }}>Height (cm)</label>
+                  <input type="number" value={formData.height} onChange={(e) => handleInputChange('height', e.target.value)}
+                    className="w-full px-3.5 py-2.5 rounded-xl text-sm font-semibold outline-none border"
+                    style={{ background: '#F3F6FA', borderColor: '#D8E1ED', color: '#1A2440' }} required />
                 </div>
-
                 <div>
-                  <label className="block text-xs font-bold text-[#003631] mb-2">Weight (kg)</label>
-                  <input
-                    type="number"
-                    value={formData.weight}
-                    onChange={(e) => handleInputChange('weight', e.target.value)}
-                    className="w-full px-4 py-3 border border-[#E4E9E5] rounded-xl text-sm font-medium focus:outline-none focus:border-[#003631] transition-all"
-                    required
-                  />
+                  <label className="block text-xs font-semibold mb-1.5" style={{ color: '#637082' }}>Weight (kg)</label>
+                  <input type="number" value={formData.weight} onChange={(e) => handleInputChange('weight', e.target.value)}
+                    className="w-full px-3.5 py-2.5 rounded-xl text-sm font-semibold outline-none border"
+                    style={{ background: '#F3F6FA', borderColor: '#D8E1ED', color: '#1A2440' }} required />
                 </div>
-
-                <div className="relative">
-                  <label className="block text-xs font-bold text-[#003631] mb-2">BMI (Auto calculated)</label>
-                  <div className={`w-full px-4 py-3 border rounded-xl text-sm font-extrabold flex items-center justify-between transition-all ${bmiColor}`}>
-                    <span>{bmi > 0 ? bmi : '--'}</span>
-                    <span className="text-[10px] uppercase font-bold tracking-wider">{bmiCategory}</span>
+                <div>
+                  <label className="block text-xs font-semibold mb-1.5" style={{ color: '#637082' }}>BMI (Auto)</label>
+                  <div className={`w-full px-3.5 py-2.5 border rounded-xl text-sm font-bold flex items-center justify-between ${bmiColor}`}>
+                    <span>{bmi > 0 ? bmi : '—'}</span>
+                    <span className="text-[10px] uppercase font-black tracking-wider">{bmiCategory}</span>
                   </div>
                 </div>
-
                 <div className="grid grid-cols-2 gap-2">
                   <div>
-                    <label className="block text-xs font-bold text-[#003631] mb-2">Systolic BP (mmHg)</label>
-                    <input
-                      type="number"
-                      value={formData.ap_hi}
-                      onChange={(e) => handleInputChange('ap_hi', e.target.value)}
-                      className="w-full px-3 py-3 border border-[#E4E9E5] rounded-xl text-xs font-medium focus:outline-none focus:border-[#003631] transition-all"
-                      required
-                    />
+                    <label className="block text-xs font-semibold mb-1.5" style={{ color: '#637082' }}>Systolic BP</label>
+                    <input type="number" value={formData.ap_hi} onChange={(e) => handleInputChange('ap_hi', e.target.value)}
+                      className="w-full px-3 py-2.5 rounded-xl text-xs font-semibold outline-none border"
+                      style={{ background: '#F3F6FA', borderColor: '#D8E1ED', color: '#1A2440' }} required />
                   </div>
                   <div>
-                    <label className="block text-xs font-bold text-[#003631] mb-2">Diastolic BP (mmHg)</label>
-                    <input
-                      type="number"
-                      value={formData.ap_lo}
-                      onChange={(e) => handleInputChange('ap_lo', e.target.value)}
-                      className="w-full px-3 py-3 border border-[#E4E9E5] rounded-xl text-xs font-medium focus:outline-none focus:border-[#003631] transition-all"
-                      required
-                    />
+                    <label className="block text-xs font-semibold mb-1.5" style={{ color: '#637082' }}>Diastolic BP</label>
+                    <input type="number" value={formData.ap_lo} onChange={(e) => handleInputChange('ap_lo', e.target.value)}
+                      className="w-full px-3 py-2.5 rounded-xl text-xs font-semibold outline-none border"
+                      style={{ background: '#F3F6FA', borderColor: '#D8E1ED', color: '#1A2440' }} required />
                   </div>
                 </div>
               </div>
             </div>
 
-            {/* Lifestyle and Medical */}
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6 pt-2">
+            {/* Medical + Lifestyle */}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               <div>
-                <h3 className="text-xs font-extrabold text-[#003631]/50 uppercase tracking-widest mb-4">Medical Parameters</h3>
+                <h3 className="text-[10px] font-black uppercase tracking-widest mb-3" style={{ color: '#9DAABB' }}>Medical Parameters</h3>
                 <div className="grid grid-cols-2 gap-4">
-                  <div>
-                    <label className="block text-xs font-bold text-[#003631] mb-2">Cholesterol Level</label>
-                    <select
-                      value={formData.cholesterol}
-                      onChange={(e) => handleInputChange('cholesterol', e.target.value)}
-                      className="w-full px-4 py-3 border border-[#E4E9E5] rounded-xl text-sm focus:outline-none focus:border-[#003631] bg-white transition-all font-semibold"
-                    >
-                      <option value="1">Normal</option>
-                      <option value="2">Above Normal</option>
-                      <option value="3">Well Above Normal</option>
-                    </select>
-                  </div>
-
-                  <div>
-                    <label className="block text-xs font-bold text-[#003631] mb-2">Glucose Level</label>
-                    <select
-                      value={formData.gluc}
-                      onChange={(e) => handleInputChange('gluc', e.target.value)}
-                      className="w-full px-4 py-3 border border-[#E4E9E5] rounded-xl text-sm focus:outline-none focus:border-[#003631] bg-white transition-all font-semibold"
-                    >
-                      <option value="1">Normal</option>
-                      <option value="2">Above Normal</option>
-                      <option value="3">Well Above Normal</option>
-                    </select>
-                  </div>
+                  {[
+                    { label: 'Cholesterol Level', key: 'cholesterol', opts: [['1','Normal'],['2','Above Normal'],['3','Well Above Normal']] },
+                    { label: 'Glucose Level',     key: 'gluc',        opts: [['1','Normal'],['2','Above Normal'],['3','Well Above Normal']] },
+                  ].map(s => (
+                    <div key={s.key}>
+                      <label className="block text-xs font-semibold mb-1.5" style={{ color: '#637082' }}>{s.label}</label>
+                      <select value={formData[s.key]} onChange={(e) => handleInputChange(s.key, e.target.value)}
+                        className="w-full px-3.5 py-2.5 rounded-xl text-sm font-semibold outline-none border"
+                        style={{ background: '#F3F6FA', borderColor: '#D8E1ED', color: '#1A2440' }}>
+                        {s.opts.map(([v, l]) => <option key={v} value={v}>{l}</option>)}
+                      </select>
+                    </div>
+                  ))}
                 </div>
               </div>
-
               <div>
-                <h3 className="text-xs font-extrabold text-[#003631]/50 uppercase tracking-widest mb-4">Lifestyle Factors</h3>
+                <h3 className="text-[10px] font-black uppercase tracking-widest mb-3" style={{ color: '#9DAABB' }}>Lifestyle Factors</h3>
                 <div className="grid grid-cols-3 gap-4">
-                  <div>
-                    <label className="block text-xs font-bold text-[#003631] mb-2">Smoking</label>
-                    <select
-                      value={formData.smoke}
-                      onChange={(e) => handleInputChange('smoke', e.target.value)}
-                      className="w-full px-3 py-3 border border-[#E4E9E5] rounded-xl text-xs focus:outline-none focus:border-[#003631] bg-white transition-all font-semibold"
-                    >
-                      <option value="0">No</option>
-                      <option value="1">Yes</option>
-                    </select>
-                  </div>
-
-                  <div>
-                    <label className="block text-xs font-bold text-[#003631] mb-2">Alcohol Intake</label>
-                    <select
-                      value={formData.alco}
-                      onChange={(e) => handleInputChange('alco', e.target.value)}
-                      className="w-full px-3 py-3 border border-[#E4E9E5] rounded-xl text-xs focus:outline-none focus:border-[#003631] bg-white transition-all font-semibold"
-                    >
-                      <option value="0">No</option>
-                      <option value="1">Yes</option>
-                    </select>
-                  </div>
-
-                  <div>
-                    <label className="block text-xs font-bold text-[#003631] mb-2">Physical Activity</label>
-                    <select
-                      value={formData.active}
-                      onChange={(e) => handleInputChange('active', e.target.value)}
-                      className="w-full px-3 py-3 border border-[#E4E9E5] rounded-xl text-xs focus:outline-none focus:border-[#003631] bg-white transition-all font-semibold"
-                    >
-                      <option value="1">Active</option>
-                      <option value="0">Inactive</option>
-                    </select>
-                  </div>
+                  {[
+                    { label: 'Smoking',  key: 'smoke',  opts: [['0','No'],['1','Yes']] },
+                    { label: 'Alcohol',  key: 'alco',   opts: [['0','No'],['1','Yes']] },
+                    { label: 'Activity', key: 'active', opts: [['1','Active'],['0','Inactive']] },
+                  ].map(s => (
+                    <div key={s.key}>
+                      <label className="block text-xs font-semibold mb-1.5" style={{ color: '#637082' }}>{s.label}</label>
+                      <select value={formData[s.key]} onChange={(e) => handleInputChange(s.key, e.target.value)}
+                        className="w-full px-3 py-2.5 rounded-xl text-xs font-semibold outline-none border"
+                        style={{ background: '#F3F6FA', borderColor: '#D8E1ED', color: '#1A2440' }}>
+                        {s.opts.map(([v, l]) => <option key={v} value={v}>{l}</option>)}
+                      </select>
+                    </div>
+                  ))}
                 </div>
               </div>
             </div>
 
-            {/* Run Button */}
-            <div className="pt-4">
-              <button
-                type="submit"
-                disabled={analyzing}
-                className={`w-full text-[#FFEDA8] font-extrabold py-4 rounded-xl transition-all shadow-md flex items-center justify-center gap-3 text-base ${
-                  analyzing ? 'bg-slate-400 cursor-not-allowed' : 'bg-[#003631] hover:bg-[#002623] hover:shadow-lg cursor-pointer'
-                }`}
-              >
+            {/* Submit */}
+            <div className="pt-2">
+              <button type="submit" disabled={analyzing}
+                className="w-full text-white font-bold py-4 rounded-2xl transition-all flex items-center justify-center gap-3 text-sm active:scale-[0.99]"
+                style={{
+                  background: analyzing ? '#9DAABB' : 'linear-gradient(135deg,#3B7CF4,#6355F5)',
+                  cursor: analyzing ? 'not-allowed' : 'pointer',
+                  boxShadow: analyzing ? 'none' : '0 4px 24px rgba(59,124,244,0.40)'
+                }}>
                 {analyzing ? (
-                  <>
-                    <RefreshCw className="w-5.5 h-5.5 animate-spin text-[#FFEDA8]" />
-                    Analyzing Patient Telemetry ({loadingProgress}%)...
-                  </>
+                  <><RefreshCw className="w-5 h-5 animate-spin" />Analysing Patient Data ({loadingProgress}%)…</>
                 ) : (
-                  <>
-                    <Brain className="w-5.5 h-5.5 text-[#FFEDA8]" />
-                    Run AI Cardiovascular Risk Evaluation
-                  </>
+                  <><Brain className="w-5 h-5" />Run AI Cardiovascular Risk Evaluation</>
                 )}
               </button>
             </div>
 
-            {/* Simple Inline Loader */}
+            {/* Progress */}
             {analyzing && (
-              <div className="mt-6 p-5 bg-[#FAFAF5] border border-emerald-500/20 rounded-2xl space-y-3 animate-pulse">
-                <div className="flex items-center justify-between text-xs font-bold text-[#003631]">
+              <div className="p-4 rounded-2xl space-y-2.5 border"
+                style={{ background: '#EEF3FF', borderColor: '#C7D7F8' }}>
+                <div className="flex items-center justify-between text-xs font-bold" style={{ color: '#1A2440' }}>
                   <span className="flex items-center gap-2">
                     <Heart className="w-4 h-4 text-rose-500 animate-pulse" />
                     {loadingMessages[loadingStep]}
                   </span>
-                  <span>{loadingProgress}%</span>
+                  <span style={{ color: '#3B7CF4' }} className="font-black">{loadingProgress}%</span>
                 </div>
-                <div className="w-full bg-slate-200 h-2 rounded-full overflow-hidden">
-                  <div
-                    className="bg-emerald-600 h-full rounded-full transition-all duration-300"
-                    style={{ width: `${loadingProgress}%` }}
-                  ></div>
+                <div className="w-full h-1.5 rounded-full overflow-hidden" style={{ background: '#C7D7F8' }}>
+                  <div className="h-full rounded-full transition-all duration-300"
+                    style={{ width: `${loadingProgress}%`, background: 'linear-gradient(90deg,#3B7CF4,#6355F5)' }} />
                 </div>
               </div>
             )}
           </form>
         </div>
 
-        {/* COMPLETE AI REPORT LAYOUT */}
+        {/* RESULTS */}
         {analysisResult && !analyzing && (
-          <div className="space-y-8 print-container">
-            {/* View Selector Tabs */}
-            <div className="flex flex-col sm:flex-row border-b border-[#E4E9E5] bg-white rounded-3xl p-2 gap-2 no-print shadow-xs">
-              {[
-                { id: 'risk', label: 'Disease Risk Screening', desc: 'Primary Health Risk Assessment', icon: Activity },
-                { id: 'similarity', label: 'Patient Similarity Cohorts', desc: 'Patient Group Matching', icon: UserCheck },
-                { id: 'neural', label: 'Neural Diagnostic Profile', desc: 'Advanced Pattern Analysis', icon: Brain }
-              ].map((tab) => {
-                const IconComponent = tab.icon;
-                const isActive = activeTab === tab.id;
-                return (
-                  <button
-                    key={tab.id}
-                    onClick={() => setActiveTab(tab.id)}
-                    className={`flex-1 flex items-center gap-3.5 p-4 rounded-2xl text-left transition-all cursor-pointer ${
-                      isActive 
-                        ? 'bg-[#003631] text-[#FFEDA8] shadow-md' 
-                        : 'bg-white text-[#003631] hover:bg-[#FAFAF5]'
-                    }`}
-                  >
-                    <div className={`p-2.5 rounded-xl shrink-0 ${isActive ? 'bg-[#002623] text-[#FFEDA8]' : 'bg-[#FAFAF5] text-[#003631]'}`}>
-                      <IconComponent className="w-5 h-5" />
-                    </div>
-                    <div>
-                      <span className="block text-sm font-black tracking-tight">{tab.label}</span>
-                      <span className={`block text-[10px] ${isActive ? 'text-[#FFEDA8]/75' : 'text-[#003631]/60'} font-semibold`}>{tab.desc}</span>
-                    </div>
-                  </button>
-                );
-              })}
+          <div className="space-y-6 print-container">
+
+            {/* Tab Selector */}
+            <div className="bg-white rounded-3xl p-2 no-print"
+              style={{ border: '1px solid #DDE4EE', boxShadow: '0 2px 16px rgba(26,36,64,0.06)' }}>
+              <div className="flex flex-col sm:flex-row gap-2">
+                {[
+                  { id: 'risk',       label: 'Disease Risk Screening',    desc: 'Primary Health Risk Assessment', icon: Activity  },
+                  { id: 'similarity', label: 'Patient Similarity Cohorts', desc: 'Patient Group Matching',         icon: UserCheck },
+                  { id: 'neural',     label: 'Neural Diagnostic Profile',  desc: 'Advanced Pattern Analysis',      icon: Brain     }
+                ].map((tab) => {
+                  const Icon = tab.icon;
+                  const active = activeTab === tab.id;
+                  return (
+                    <button key={tab.id} onClick={() => setActiveTab(tab.id)}
+                      className="flex-1 flex items-center gap-3 p-4 rounded-2xl text-left transition-all cursor-pointer"
+                      style={{
+                        background: active ? 'linear-gradient(135deg,#1B2B6B,#2D3F8F)' : 'transparent',
+                        color: active ? '#fff' : '#1A2440'
+                      }}>
+                      <div className="p-2 rounded-xl shrink-0"
+                        style={{ background: active ? 'rgba(255,255,255,0.15)' : '#F3F6FA' }}>
+                        <Icon className="w-5 h-5" style={{ color: active ? '#93C5FD' : '#637082' }} />
+                      </div>
+                      <div>
+                        <span className="block text-sm font-black tracking-tight">{tab.label}</span>
+                        <span className="block text-[10px] font-semibold mt-0.5"
+                          style={{ color: active ? 'rgba(255,255,255,0.6)' : '#9DAABB' }}>
+                          {tab.desc}
+                        </span>
+                      </div>
+                    </button>
+                  );
+                })}
+              </div>
             </div>
 
-            {/* Patient Header Summary (Print Only) */}
+            {/* Print header */}
             <div className="hidden print:block border-b-2 border-slate-300 pb-4 mb-6">
               <div className="flex justify-between items-end">
                 <div>
                   <h1 className="text-3xl font-black text-slate-900 uppercase">Cardiac Risk Assessment Report</h1>
-                  <p className="text-sm text-slate-600 font-medium">NovusAI Engine • HIPAA Compliant Diagnostic Data</p>
+                  <p className="text-sm text-slate-600 font-medium">NovusAI Engine · Confidential Medical Data</p>
                 </div>
                 <div className="text-right font-mono text-xs">
                   <p><strong>Patient Name:</strong> {formData.name}</p>
                   <p><strong>Patient ID:</strong> {formData.patientId}</p>
-                  <p><strong>Date Generated:</strong> {new Date().toLocaleDateString()}</p>
+                  <p><strong>Date:</strong> {new Date().toLocaleDateString()}</p>
                 </div>
               </div>
             </div>
 
-            {/* PAGE 1 */}
             {activeTab === 'risk' && (
-              <DiseaseRiskScreening
-                analysisResult={analysisResult}
-                formData={formData}
-                bmi={bmi}
-                bmiCategory={bmiCategory}
-                handlePrint={handlePrint}
-              />
+              <DiseaseRiskScreening analysisResult={analysisResult} formData={formData} bmi={bmi} bmiCategory={bmiCategory} handlePrint={handlePrint} />
             )}
-
-            {/* PAGE 2 */}
             {activeTab === 'similarity' && (
-              <PatientSimilarityCohorts
-                analysisResult={analysisResult}
-                formData={formData}
-                bmi={bmi}
-              />
+              <PatientSimilarityCohorts analysisResult={analysisResult} formData={formData} bmi={bmi} />
             )}
-
-            {/* PAGE 3 */}
             {activeTab === 'neural' && (
-              <NeuralDiagnosticProfile
-                analysisResult={analysisResult}
-                formData={formData}
-                bmi={bmi}
-                bmiCategory={bmiCategory}
-                handlePrint={handlePrint}
-              />
+              <NeuralDiagnosticProfile analysisResult={analysisResult} formData={formData} bmi={bmi} bmiCategory={bmiCategory} handlePrint={handlePrint} />
             )}
           </div>
         )}
-
       </main>
     </div>
   );

@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Activity } from 'lucide-react';
+import { Activity, Brain } from 'lucide-react';
 
 export default function Navbar({ onGetStarted, onGoHome, isScreeningPage }) {
   const [scrolled, setScrolled] = useState(false);
@@ -50,9 +50,13 @@ export default function Navbar({ onGetStarted, onGoHome, isScreeningPage }) {
 
   return (
     <header
-      className={`sticky top-0 z-50 w-full transition-all duration-200 border-b border-[#E4E9E5] ${
-        scrolled ? 'bg-[#FAFAF5]/95 backdrop-blur-md shadow-xs' : 'bg-[#FAFAF5]'
-      }`}
+      className={`sticky top-0 z-50 w-full transition-all duration-200 border-b`}
+      style={{
+        background: scrolled ? 'rgba(255, 255, 255, 0.95)' : '#FFFFFF',
+        backdropFilter: scrolled ? 'blur(12px)' : 'none',
+        borderColor: '#DDE4EE',
+        boxShadow: '0 1px 8px rgba(26, 36, 64, 0.06)'
+      }}
     >
       <div className="max-w-7xl mx-auto px-6 sm:px-8 h-20 flex items-center justify-between">
         {/* Left: Brand Logo */}
@@ -62,11 +66,16 @@ export default function Navbar({ onGetStarted, onGoHome, isScreeningPage }) {
             e.preventDefault();
             if (onGoHome) onGoHome();
           }}
-          className="flex items-center gap-2.5 group focus:outline-none cursor-pointer"
+          className="flex items-center gap-3 group focus:outline-none cursor-pointer"
         >
-          <img src="/logo.jpeg" alt="NovusAI Logo" className="w-14 h-14 object-contain rounded-lg transition-transform group-hover:scale-105" />
-          <span className="text-xl font-bold tracking-tight text-[#003631]">
-            Novus<span className="text-[#003631]">AI</span>
+          <div
+            className="w-10 h-10 rounded-xl flex items-center justify-center transition-transform group-hover:scale-105 shadow-sm"
+            style={{ background: 'linear-gradient(135deg, #3B7CF4, #6355F5)' }}
+          >
+            <Brain className="w-5 h-5 text-white" />
+          </div>
+          <span className="text-xl font-extrabold tracking-tight" style={{ color: '#1B2B6B' }}>
+            Novus<span style={{ color: '#3B7CF4' }}>AI</span>
           </span>
         </a>
 
@@ -78,7 +87,10 @@ export default function Navbar({ onGetStarted, onGoHome, isScreeningPage }) {
                 key={link.name}
                 href={link.href}
                 onClick={(e) => handleNavClick(e, link.href)}
-                className="text-sm font-semibold text-[#003631]/70 hover:text-[#003631] transition-colors"
+                className="text-sm font-semibold transition-colors hover:opacity-100"
+                style={{ color: '#637082' }}
+                onMouseEnter={(e) => (e.currentTarget.style.color = '#1B2B6B')}
+                onMouseLeave={(e) => (e.currentTarget.style.color = '#637082')}
               >
                 {link.name}
               </a>
@@ -90,7 +102,11 @@ export default function Navbar({ onGetStarted, onGoHome, isScreeningPage }) {
         <div className="hidden md:flex items-center">
           <button
             onClick={onGetStarted}
-            className="bg-[#003631] hover:bg-[#002623] text-[#FFEDA8] text-sm font-bold px-6 py-2.5 rounded-xl transition-all shadow-xs active:scale-95 cursor-pointer"
+            className="text-white text-sm font-bold px-6 py-2.5 rounded-xl transition-all shadow-md active:scale-95 cursor-pointer"
+            style={{
+              background: 'linear-gradient(135deg, #3B7CF4, #6355F5)',
+              boxShadow: '0 4px 16px rgba(59, 124, 244, 0.3)'
+            }}
           >
             Get Started
           </button>
@@ -100,7 +116,8 @@ export default function Navbar({ onGetStarted, onGoHome, isScreeningPage }) {
         <div className="md:hidden flex items-center">
           <button
             onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-            className="text-[#003631] hover:text-[#002623] p-2 focus:outline-none"
+            className="p-2 focus:outline-none"
+            style={{ color: '#1B2B6B' }}
             aria-label="Toggle Navigation"
           >
             <svg
@@ -131,13 +148,14 @@ export default function Navbar({ onGetStarted, onGoHome, isScreeningPage }) {
 
       {/* Mobile Menu Dropdown */}
       {mobileMenuOpen && (
-        <div className="md:hidden bg-[#FAFAF5] border-b border-[#E4E9E5] px-6 py-4 space-y-3">
+        <div className="md:hidden border-b px-6 py-4 space-y-3" style={{ background: '#FFFFFF', borderColor: '#DDE4EE' }}>
           {!isScreeningPage && navLinks.map((link) => (
             <a
               key={link.name}
               href={link.href}
               onClick={(e) => handleNavClick(e, link.href)}
-              className="block text-base font-semibold text-[#003631]/80 hover:text-[#003631] py-1"
+              className="block text-base font-semibold py-1"
+              style={{ color: '#1B2B6B' }}
             >
               {link.name}
             </a>
@@ -147,7 +165,8 @@ export default function Navbar({ onGetStarted, onGoHome, isScreeningPage }) {
               setMobileMenuOpen(false);
               if (onGetStarted) onGetStarted();
             }}
-            className="w-full mt-2 bg-[#003631] hover:bg-[#002623] text-[#FFEDA8] text-sm font-bold px-5 py-2.5 rounded-xl transition-colors text-center cursor-pointer"
+            className="w-full mt-2 text-white text-sm font-bold px-5 py-2.5 rounded-xl transition-colors text-center cursor-pointer"
+            style={{ background: 'linear-gradient(135deg, #3B7CF4, #6355F5)' }}
           >
             Get Started
           </button>
