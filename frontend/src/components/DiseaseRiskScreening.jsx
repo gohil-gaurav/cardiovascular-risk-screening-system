@@ -73,7 +73,7 @@ export default function DiseaseRiskScreening({
   const popAvg = 42;
 
   return (
-    <div className="min-h-screen bg-[#F0F4F8] text-slate-800 p-4 md:p-8 space-y-8 font-sans">
+    <div className="min-h-screen font-sans p-4 md:p-8 space-y-8" style={{ background: '#E8ECF2', color: '#1A2440' }}>
 
       {/* ── Page Header ─────────────────────────────────────────────── */}
       <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 border-b border-slate-200 pb-5">
@@ -105,7 +105,7 @@ export default function DiseaseRiskScreening({
           {/* Prediction Result card */}
           <div
             className="relative overflow-hidden rounded-3xl p-6 text-white shadow-md flex items-center justify-between gap-4"
-            style={{ background: isHighRisk ? 'linear-gradient(135deg,#EF4444,#E11D48)' : 'linear-gradient(135deg,#22C55E,#0D9488)' }}
+            style={{ background: isHighRisk ? 'linear-gradient(135deg,#7F1D1D,#991B1B)' : 'linear-gradient(135deg,#1B2B6B,#2D3F8F)' }}
           >
             <div className="absolute inset-0 opacity-[0.08] bg-[radial-gradient(ellipse_at_top_right,white,transparent)]" />
             <div className="z-10 space-y-3">
@@ -276,7 +276,7 @@ export default function DiseaseRiskScreening({
           {/* Action banner */}
           <div
             className="relative overflow-hidden text-white rounded-3xl p-5 shadow-sm space-y-4"
-            style={{ background: 'linear-gradient(135deg,#2563EB,#4338CA)' }}
+            style={{ background: 'linear-gradient(135deg,#3B7CF4,#6355F5)' }}
           >
             <div className="absolute -right-5 -bottom-5 w-24 h-24 bg-white/5 rounded-full pointer-events-none" />
             <div className="flex items-start gap-3">
@@ -309,7 +309,8 @@ export default function DiseaseRiskScreening({
           {/* Download PDF */}
           <button
             onClick={handlePrint}
-            className="w-full flex items-center justify-center gap-2 bg-slate-800 hover:bg-slate-900 text-white py-3.5 rounded-2xl text-xs font-bold shadow-sm active:scale-95 transition-all cursor-pointer no-print"
+            className="w-full flex items-center justify-center gap-2 text-white py-3.5 rounded-2xl text-xs font-bold shadow-sm active:scale-95 transition-all cursor-pointer no-print"
+            style={{ background: 'linear-gradient(135deg,#1B2B6B,#2D3F8F)' }}
           >
             <Printer className="w-4 h-4" />
             Download PDF Report

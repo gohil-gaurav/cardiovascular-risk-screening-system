@@ -129,7 +129,7 @@ export default function NeuralDiagnosticProfile({
   ];
 
   return (
-    <div className="min-h-screen bg-[#F0F4F8] text-slate-800 p-4 md:p-8 space-y-8 font-sans">
+    <div className="min-h-screen font-sans p-4 md:p-8 space-y-8" style={{ background: '#E8ECF2', color: '#1A2440' }}>
 
       {/* ── Page Header ─────────────────────────────────────────────── */}
       <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 border-b border-slate-200 pb-5">
@@ -137,7 +137,10 @@ export default function NeuralDiagnosticProfile({
           <h1 className="text-2xl font-extrabold tracking-tight text-slate-900">
             Deep Learning Health Screening
           </h1>
-          <span className="hidden md:inline-block bg-violet-100 text-violet-700 text-[10px] font-black uppercase tracking-wider px-3 py-1 rounded-full border border-violet-200">
+          <span
+            className="hidden md:inline-block text-[10px] font-black uppercase tracking-wider px-3 py-1 rounded-full border"
+            style={{ background: '#F0FDF9', color: '#065F46', borderColor: '#A7F3D0' }}
+          >
             Neural Network
           </span>
         </div>
@@ -146,9 +149,9 @@ export default function NeuralDiagnosticProfile({
         <div className="flex items-center gap-3 bg-white border border-slate-200 rounded-2xl px-5 py-3 shadow-sm shrink-0">
           <div>
             <span className="block text-[10px] font-bold text-slate-400 uppercase tracking-wider">Overall Performance</span>
-            <span className="block text-xl font-black text-violet-600">95.6%</span>
+            <span className="block text-xl font-black" style={{ color: '#0F766E' }}>95.6%</span>
           </div>
-          <TrendingUp className="w-8 h-8 text-violet-400" />
+          <TrendingUp className="w-8 h-8" style={{ color: '#34D399' }} />
         </div>
       </div>
 
@@ -165,7 +168,7 @@ export default function NeuralDiagnosticProfile({
           {/* Deep Health Result card */}
           <div
             className="relative overflow-hidden text-white rounded-3xl p-6 shadow-lg flex justify-between items-center gap-4"
-            style={{ background: 'linear-gradient(135deg,#4C1D95,#1E1B4B)' }}
+            style={{ background: 'linear-gradient(135deg,#1B2B6B,#0E1840)' }}
           >
             <div className="absolute inset-0 opacity-[0.07] pointer-events-none" style={{ background: 'radial-gradient(ellipse at top right, rgba(255,255,255,0.15), transparent)' }} />
             <div className="z-10 space-y-3">
@@ -309,8 +312,8 @@ export default function NeuralDiagnosticProfile({
                         style={{
                           width: `${pct}%`,
                           background: isRisk
-                            ? 'linear-gradient(90deg,#A78BFA,#7C3AED)'
-                            : 'linear-gradient(90deg,#34D399,#0D9488)'
+                            ? 'linear-gradient(90deg,#EF4444,#B91C1C)'
+                            : 'linear-gradient(90deg,#3B7CF4,#6355F5)'
                         }}
                       />
                     </div>
@@ -389,7 +392,8 @@ export default function NeuralDiagnosticProfile({
               {/* Download PDF */}
               <button
                 onClick={handlePrint}
-                className="w-full flex items-center justify-center gap-2 bg-violet-700 hover:bg-violet-800 text-white py-3.5 rounded-2xl text-xs font-bold shadow-sm active:scale-95 transition-all cursor-pointer no-print"
+                className="w-full flex items-center justify-center gap-2 text-white py-3.5 rounded-2xl text-xs font-bold shadow-sm active:scale-95 transition-all cursor-pointer no-print"
+                style={{ background: 'linear-gradient(135deg,#1B2B6B,#2D3F8F)' }}
               >
                 <Printer className="w-4 h-4" />
                 Download Neural Report PDF
