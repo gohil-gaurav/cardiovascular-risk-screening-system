@@ -1,5 +1,5 @@
 import React from 'react';
-import { Activity } from 'lucide-react';
+import { Activity, Brain } from 'lucide-react';
 
 export default function Footer({ onGetStarted, onGoHome }) {
   const handleNavClick = (e, href) => {
@@ -14,18 +14,23 @@ export default function Footer({ onGetStarted, onGoHome }) {
   };
 
   return (
-    <footer className="bg-[#003631] text-[#FFEDA8] border-t border-[#002623]">
+    <footer className="text-white border-t" style={{ background: '#0E1840', borderColor: 'rgba(255, 255, 255, 0.1)' }}>
       <div className="max-w-7xl mx-auto px-6 sm:px-8 py-16">
-        <div className="grid grid-cols-1 md:grid-cols-12 gap-12 pb-12 border-b border-[#FFEDA8]/15">
+        <div className="grid grid-cols-1 md:grid-cols-12 gap-12 pb-12 border-b" style={{ borderColor: 'rgba(255, 255, 255, 0.1)' }}>
           {/* Brand Col */}
           <div className="md:col-span-5 space-y-4">
-            <div className="flex items-center gap-2.5">
-              <img src="/logo.jpeg" alt="NovusAI Logo" className="w-9 h-9 object-contain rounded-md" />
-              <span className="text-xl font-bold tracking-tight text-white">
-                Novus<span className="text-[#FFEDA8]">AI</span>
+            <div className="flex items-center gap-3">
+              <div
+                className="w-9 h-9 rounded-xl flex items-center justify-center shadow-sm"
+                style={{ background: 'linear-gradient(135deg, #3B7CF4, #6355F5)' }}
+              >
+                <Brain className="w-5 h-5 text-white" />
+              </div>
+              <span className="text-xl font-extrabold tracking-tight text-white">
+                Novus<span style={{ color: '#3B7CF4' }}>AI</span>
               </span>
             </div>
-            <p className="text-sm text-[#FFEDA8]/70 leading-relaxed max-w-sm">
+            <p className="text-sm leading-relaxed max-w-sm" style={{ color: '#9DAABB' }}>
               Empowering healthcare professionals with intelligent cardiovascular risk prediction and early disease detection using machine learning.
             </p>
           </div>
@@ -35,7 +40,7 @@ export default function Footer({ onGetStarted, onGoHome }) {
             <h4 className="text-xs font-bold text-white uppercase tracking-wider">
               Navigation
             </h4>
-            <ul className="space-y-2.5 text-sm text-[#FFEDA8]/80">
+            <ul className="space-y-2.5 text-sm" style={{ color: '#9DAABB' }}>
               <li>
                 <a
                   href="#features"
@@ -57,7 +62,8 @@ export default function Footer({ onGetStarted, onGoHome }) {
               <li>
                 <button
                   onClick={onGetStarted}
-                  className="hover:text-white transition-colors text-left font-bold text-[#FFEDA8] cursor-pointer"
+                  className="transition-colors text-left font-bold cursor-pointer"
+                  style={{ color: '#3B7CF4' }}
                 >
                   Risk Screening Engine →
                 </button>
@@ -70,7 +76,7 @@ export default function Footer({ onGetStarted, onGoHome }) {
             <h4 className="text-xs font-bold text-white uppercase tracking-wider">
               Resources & Privacy
             </h4>
-            <ul className="space-y-2.5 text-sm text-[#FFEDA8]/80">
+            <ul className="space-y-2.5 text-sm" style={{ color: '#9DAABB' }}>
               <li>
                 <a
                   href="#privacy"
@@ -101,7 +107,7 @@ export default function Footer({ onGetStarted, onGoHome }) {
         </div>
 
         {/* Bottom copyright */}
-        <div className="pt-8 flex flex-col sm:flex-row items-center justify-between gap-4 text-xs text-[#FFEDA8]/60">
+        <div className="pt-8 flex flex-col sm:flex-row items-center justify-between gap-4 text-xs" style={{ color: '#9DAABB' }}>
           <p>© 2027 NovusAI. All rights reserved.</p>
           <p>Designed for Hospitals, Clinicians & Healthcare Researchers</p>
         </div>
