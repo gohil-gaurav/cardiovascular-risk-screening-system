@@ -426,3 +426,7 @@ def predict_risk(data: PatientData):
             status_code=500,
             detail=f"An error occurred during risk model inference: {str(e)}"
         )
+
+
+from app.routes.screen import router as screen_router
+app.include_router(screen_router, prefix="/api")
