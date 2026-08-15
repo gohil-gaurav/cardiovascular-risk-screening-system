@@ -24,6 +24,7 @@ class ScreeningReport(BaseModel):
     population_comparison_tier: str  # B's KMeans cluster label, kept separate for technical/doctor view
     prediction: str
     top_factors: list[TopFactor]
+    clustering_confidence: dict[str, float] = None
     # patient-facing plain language
     patient_summary: str
     key_factors: list[str]

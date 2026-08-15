@@ -135,6 +135,7 @@ def build_combined_from_predict_response(
         "prediction": prediction,
         "top_factors": top_factors,
         "patient_context": patient_context,
+        "clustering_confidence": predict_response.get("clustering_confidence", {}),
     }
 
 

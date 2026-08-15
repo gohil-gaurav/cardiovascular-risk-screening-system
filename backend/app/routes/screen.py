@@ -58,4 +58,5 @@ def screen_patient(patient: PatientData) -> ScreeningReport:
         key_factors=explanation["key_factors"],
         suggested_next_step=explanation["suggested_next_step"],
         fallback_used=explanation.get("fallback_used", False),
+        clustering_confidence=combined["clustering_confidence"],
     )
