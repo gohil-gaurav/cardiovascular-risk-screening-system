@@ -21,6 +21,7 @@ class ScreeningReport(BaseModel):
     # doctor-facing technical detail
     final_risk_pct: float
     risk_tier: str
+    population_comparison_tier: str  # B's KMeans cluster label, kept separate for technical/doctor view
     prediction: str
     top_factors: list[TopFactor]
     # patient-facing plain language

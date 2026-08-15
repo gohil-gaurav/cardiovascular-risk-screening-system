@@ -1,14 +1,4 @@
-"""
-llm_service.py
 
-Student D — LLM integration service.
-
-Takes combined output from Model A (classification), Model B (clustering),
-and Model C (deep learning + SHAP), and produces a plain-language explanation
-for doctors and patients using a local Ollama model.
-
-This module is the production version of notebooks/student_D_llm_integration.ipynb.
-"""
 
 import json
 import logging
@@ -18,9 +8,7 @@ import requests
 
 logger = logging.getLogger(__name__)
 
-# ---------------------------------------------------------------------------
 # Config
-# ---------------------------------------------------------------------------
 
 OLLAMA_URL = "http://localhost:11434/api/chat"
 MODEL_NAME = "llama3.2:3b"  # change to match whichever model is pulled on the deployment machine
@@ -70,6 +58,20 @@ REQUIRED_KEYS = {"patient_summary", "key_factors", "suggested_next_step"}
 # the LLM prompt needs, and average the two risk scores (XGBoost + MLP)
 # into one final number so the patient only ever sees one figure.
 
+def _risk_tier_from_pct(risk_pct: float) -> str:
+    """
+    Derives the primary risk tier label from the averaged risk percentage,
+    using the same thresholds main.py already applies to the XGBoost score.
+    This keeps the tier always consistent with the number shown next to it.
+    """
+    if risk_pct >= 75:
+        return "High Risk"
+    elif risk_pct >= 45:
+        return "Moderate Risk"
+    else:
+        return "Low Risk"
+
+
 def build_combined_from_predict_response(
     predict_response: dict[str, Any],
     patient: Any,  # the PatientData instance passed into predict_risk()
@@ -78,12 +80,24 @@ def build_combined_from_predict_response(
     Takes the dict returned by main.py's predict_risk() and the original
     PatientData request, and produces the combined object used to build
     the LLM prompt.
+
+    IMPORTANT: risk_tier here is derived from the averaged risk percentage
+    (same thresholds as the XGBoost model), NOT from Student B's KMeans
+    cluster. The cluster groups patients by overall feature similarity,
+    which can legitimately disagree with the disease-probability score
+    (e.g. a patient can score 82% risk from the classifiers while still
+    landing in a "Moderate" cluster). Showing the cluster label as the
+    primary risk tier creates a contradiction like "82% risk - Moderate
+    Risk", which is confusing and unsafe to show a patient. The cluster's
+    tier is kept separately as `population_comparison_tier` for the
+    doctor-facing technical view instead.
     """
     xgb_risk_pct = predict_response["risk_score"]
     mlp_risk_pct = predict_response["mlp_risk_score"]
     final_risk_pct = round((xgb_risk_pct + mlp_risk_pct) / 2, 2)
 
-    risk_tier = predict_response["clustering"]["risk_tier"]
+    risk_tier = _risk_tier_from_pct(final_risk_pct)
+    population_comparison_tier = predict_response["clustering"]["risk_tier"]  # B's cluster label, kept separately
     prediction = "Disease" if predict_response["prediction"] == 1 else "No Disease"
 
     # primary_drivers is already sorted/formatted by main.py's SHAP logic -
@@ -117,6 +131,7 @@ def build_combined_from_predict_response(
     return {
         "final_risk_pct": final_risk_pct,
         "risk_tier": risk_tier,
+        "population_comparison_tier": population_comparison_tier,
         "prediction": prediction,
         "top_factors": top_factors,
         "patient_context": patient_context,
@@ -133,6 +148,9 @@ def build_user_message(combined: dict[str, Any]) -> str:
     )
     ctx = combined["patient_context"]
 
+    # Note: intentionally uses combined["risk_tier"] (derived from final_risk_pct),
+    # not the raw KMeans cluster label, so the LLM never sees a contradictory
+    # tier/percentage pairing like "82% - Moderate Risk".
     return f"""Patient screening result:
 - Risk level: {combined["risk_tier"]} ({combined["final_risk_pct"]}%)
 - Age: {ctx["age"]}, Gender: {ctx["gender"]}

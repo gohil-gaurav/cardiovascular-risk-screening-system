@@ -51,6 +51,7 @@ def screen_patient(patient: PatientData) -> ScreeningReport:
     return ScreeningReport(
         final_risk_pct=combined["final_risk_pct"],
         risk_tier=combined["risk_tier"],
+        population_comparison_tier=combined["population_comparison_tier"],
         prediction=combined["prediction"],
         top_factors=combined["top_factors"],
         patient_summary=explanation["patient_summary"],

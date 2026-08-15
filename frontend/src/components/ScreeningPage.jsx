@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import api from '../api/api';
+import api, { submitScreening } from '../api/api';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
   Activity,
@@ -75,7 +75,7 @@ export default function ScreeningPage({ onBackToHome }) {
   const [loadingStep, setLoadingStep] = useState(0); 
   const [loadingCountdown, setLoadingCountdown] = useState(3);
   const [analysisResult, setAnalysisResult] = useState(null);
-  const [activeTab, setActiveTab] = useState('risk'); // 'risk' | 'similarity' | 'neural'
+  const [errorMessage, setErrorMessage] = useState(null);
 
   // Auto-calculate BMI
   useEffect(() => {
@@ -153,32 +153,38 @@ export default function ScreeningPage({ onBackToHome }) {
     if (e) e.preventDefault();
     setAnalyzing(true);
     setLoadingProgress(0);
-    setLoadingCountdown(3);
+    setLoadingCountdown(5);
     setLoadingStep(0);
+    setErrorMessage(null);
 
-    const intervalTime = 25; // 2500ms total duration
+    // Slowly advance the progress bar to 95% and keep it there until the request resolves
     let progress = 0;
     const progressInterval = setInterval(() => {
-      progress += 1;
-      setLoadingProgress(progress);
+      if (progress < 30) {
+        progress += 2;
+      } else if (progress < 60) {
+        progress += 0.8;
+      } else if (progress < 85) {
+        progress += 0.4;
+      } else if (progress < 95) {
+        progress += 0.15;
+      }
       
-      const secondsLeft = Math.max(1, 3 - Math.floor((progress * 2.5) / 100));
-      setLoadingCountdown(secondsLeft);
+      const roundedProgress = Math.min(95, Math.floor(progress));
+      setLoadingProgress(roundedProgress);
 
-      if (progress < 25) {
-        setLoadingStep(0); // "Reading patient physiological metrics..."
-      } else if (progress < 50) {
-        setLoadingStep(1); // "Scaling features and matching baseline..."
-      } else if (progress < 75) {
-        setLoadingStep(2); // "Running dual-model consensus (XGBoost & PyTorch)..."
+      if (roundedProgress < 20) {
+        setLoadingStep(0);
+      } else if (roundedProgress < 40) {
+        setLoadingStep(1);
+      } else if (roundedProgress < 60) {
+        setLoadingStep(2);
+      } else if (roundedProgress < 80) {
+        setLoadingStep(3);
       } else {
-        setLoadingStep(3); // "Extracting SHAP explainability matrices..."
+        setLoadingStep(4);
       }
-
-      if (progress >= 100) {
-        clearInterval(progressInterval);
-      }
-    }, intervalTime);
+    }, 150);
 
     try {
       const payload = {
@@ -195,26 +201,24 @@ export default function ScreeningPage({ onBackToHome }) {
         active: parseInt(formData.active),
       };
 
-      const response = await api.post("/predict", payload);
+      const result = await submitScreening(payload);
 
-      // Enforce the 2.5s premium heartbeat animation
-      await new Promise((resolve) => setTimeout(resolve, 2500));
       clearInterval(progressInterval);
-      setLoadingProgress(100);
 
-      if (response.data && response.data.status === "success") {
-        window.analysisResult = response.data;
-        setAnalysisResult(response.data);
+      if (result.success) {
+        setLoadingProgress(100);
+        // Add a tiny delay for visual polish
+        await new Promise((resolve) => setTimeout(resolve, 300));
+        setAnalysisResult(result.data);
       } else {
-        throw new Error("Invalid prediction response");
+        setErrorMessage(result.error);
+        setAnalysisResult(null);
       }
     } catch (error) {
       clearInterval(progressInterval);
-      console.error("API error:", error);
-      alert(
-        error.response?.data?.detail ||
-        "Failed to connect to the prediction server. Please verify that the FastAPI backend is running."
-      );
+      console.error("Screening execution error:", error);
+      setErrorMessage("An unexpected error occurred. Please verify your connection to the screening backend.");
+      setAnalysisResult(null);
     } finally {
       setAnalyzing(false);
     }
@@ -384,8 +388,9 @@ export default function ScreeningPage({ onBackToHome }) {
   const loadingMessages = [
     "Reading patient physiological indicators...",
     "Scaling and normalizing biometric properties...",
-    "Executing dual-model consensus algorithm (XGBoost + MLP)...",
-    "Running SHAP explainer matrices in log-odds space..."
+    "Executing consensus model validation (XGBoost + MLP)...",
+    "Running explainability feature matrices...",
+    "Synthesizing results using clinical communication model..."
   ];
 
   const baseAge = parseInt(formData.age) || 50;
@@ -676,6 +681,15 @@ export default function ScreeningPage({ onBackToHome }) {
               </div>
             </div>
 
+            {/* Error Message */}
+            {errorMessage && (
+              <div className="p-4 bg-rose-50 border border-rose-200 text-rose-800 text-sm font-semibold rounded-2xl flex items-center gap-3">
+                <AlertCircle className="w-5 h-5 text-rose-600 shrink-0" />
+                <div className="flex-1">{errorMessage}</div>
+                <button type="button" onClick={() => setErrorMessage(null)} className="text-xs underline cursor-pointer hover:text-rose-900">Dismiss</button>
+              </div>
+            )}
+
             {/* Submit */}
             <div className="pt-2">
               <button type="submit" disabled={analyzing}
@@ -715,43 +729,7 @@ export default function ScreeningPage({ onBackToHome }) {
 
         {/* RESULTS */}
         {analysisResult && !analyzing && (
-          <div className="space-y-6 print-container">
-
-            {/* Tab Selector */}
-            <div className="bg-white rounded-3xl p-2 no-print"
-              style={{ border: '1px solid #DDE4EE', boxShadow: '0 2px 16px rgba(26,36,64,0.06)' }}>
-              <div className="flex flex-col sm:flex-row gap-2">
-                {[
-                  { id: 'risk',       label: 'Disease Risk Screening',    desc: 'Primary Health Risk Assessment', icon: Activity  },
-                  { id: 'similarity', label: 'Patient Similarity Cohorts', desc: 'Patient Group Matching',         icon: UserCheck },
-                  { id: 'neural',     label: 'Neural Diagnostic Profile',  desc: 'Advanced Pattern Analysis',      icon: Brain     }
-                ].map((tab) => {
-                  const Icon = tab.icon;
-                  const active = activeTab === tab.id;
-                  return (
-                    <button key={tab.id} onClick={() => setActiveTab(tab.id)}
-                      className="flex-1 flex items-center gap-3 p-4 rounded-2xl text-left transition-all cursor-pointer"
-                      style={{
-                        background: active ? 'linear-gradient(135deg,#1B2B6B,#2D3F8F)' : 'transparent',
-                        color: active ? '#fff' : '#1A2440'
-                      }}>
-                      <div className="p-2 rounded-xl shrink-0"
-                        style={{ background: active ? 'rgba(255,255,255,0.15)' : '#F3F6FA' }}>
-                        <Icon className="w-5 h-5" style={{ color: active ? '#93C5FD' : '#637082' }} />
-                      </div>
-                      <div>
-                        <span className="block text-sm font-black tracking-tight">{tab.label}</span>
-                        <span className="block text-[10px] font-semibold mt-0.5"
-                          style={{ color: active ? 'rgba(255,255,255,0.6)' : '#9DAABB' }}>
-                          {tab.desc}
-                        </span>
-                      </div>
-                    </button>
-                  );
-                })}
-              </div>
-            </div>
-
+          <div className="space-y-6 print-container animate-fade-in">
             {/* Print header */}
             <div className="hidden print:block border-b-2 border-slate-300 pb-4 mb-6">
               <div className="flex justify-between items-end">
@@ -767,15 +745,13 @@ export default function ScreeningPage({ onBackToHome }) {
               </div>
             </div>
 
-            {activeTab === 'risk' && (
-              <DiseaseRiskScreening analysisResult={analysisResult} formData={formData} bmi={bmi} bmiCategory={bmiCategory} handlePrint={handlePrint} />
-            )}
-            {activeTab === 'similarity' && (
-              <PatientSimilarityCohorts analysisResult={analysisResult} formData={formData} bmi={bmi} />
-            )}
-            {activeTab === 'neural' && (
-              <NeuralDiagnosticProfile analysisResult={analysisResult} formData={formData} bmi={bmi} bmiCategory={bmiCategory} handlePrint={handlePrint} />
-            )}
+            <DiseaseRiskScreening 
+              analysisResult={analysisResult} 
+              formData={formData} 
+              bmi={bmi} 
+              bmiCategory={bmiCategory} 
+              handlePrint={handlePrint} 
+            />
           </div>
         )}
       </main>

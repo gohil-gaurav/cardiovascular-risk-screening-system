@@ -52,9 +52,9 @@ function HeartModel() {
   });
 
   return (
-    <group position={[0, 0.2, 0]}>
+    <group position={[0, -0.1, 0]}>
       <mesh ref={meshRef}>
-        <planeGeometry args={[6.0, 5.3]} />
+        <planeGeometry args={[5.0, 4.4]} />
         <meshBasicMaterial 
           map={texture} 
           transparent={true} 
