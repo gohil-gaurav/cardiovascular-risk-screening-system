@@ -1,0 +1,49 @@
+RAW DATA
+   ↓
+01. DATA UNDERSTANDING / EDA
+   ↓
+02. DATA CLEANING
+   ├── Missing values
+   ├── Duplicate records
+   ├── Invalid values
+   ├── Data types
+   └── Data consistency
+   ↓
+03. OUTLIER ANALYSIS
+   ├── Detect
+   ├── Investigate
+   └── Remove/retain only when justified
+   ↓
+04. FEATURE ENGINEERING
+   ├── Age: days → years
+   └── BMI calculation
+   ↓
+05. TRAIN / TEST SPLIT
+   ↓
+06. FEATURE PREPROCESSING
+   ├── Encoding (if actually required)
+   └── Scaling (for algorithms that need it)
+   ↓
+07. MODEL TRAINING
+   ├── Logistic Regression
+   ├── Random Forest
+   └── XGBoost
+   ↓
+08. HYPERPARAMETER TUNING
+   └── GridSearchCV
+   ↓
+09. EVALUATION
+   ├── Recall
+   ├── Precision
+   ├── F1
+   ├── Accuracy
+   └── ROC-AUC
+   ↓
+10. THRESHOLD TUNING
+   └── High Recall
+   ↓
+11. SELECT BEST MODEL
+   ↓
+12. SAVE MODEL + PREPROCESSING PIPELINE
+   ↓
+13. FASTAPI RISK PREDICTION ENDPOINT
