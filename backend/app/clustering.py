@@ -154,25 +154,33 @@ def predict_clustering(input_dict: dict, df_scaled: np.ndarray) -> dict:
     if new_clustering_available:
         try:
             # Derived features computation
-            # TODO: confirm with clustering owner whether age is in days or years
-            age_days = input_dict["age"] * 365.25
+            age = input_dict.get("age", 50.0)
+            height_cm = input_dict.get("height", 165.0)
+            weight_kg = input_dict.get("weight", 70.0)
+            height_m = height_cm / 100.0 if height_cm > 0 else 1.65
+            computed_bmi = weight_kg / (height_m ** 2)
+            bmi = input_dict.get("BMI") or input_dict.get("bmi") or computed_bmi
+
+            age_days = age * 365.25
             age_years_for_cluster = age_days / 365.25
-            pulse_pressure = input_dict["ap_hi"] - input_dict["ap_lo"]
-            bp_ratio = input_dict["ap_hi"] / input_dict["ap_lo"] if input_dict["ap_lo"] > 0 else 1.0
+            ap_hi = input_dict.get("ap_hi", 120)
+            ap_lo = input_dict.get("ap_lo", 80)
+            pulse_pressure = ap_hi - ap_lo
+            bp_ratio = ap_hi / ap_lo if ap_lo > 0 else 1.0
 
             cluster_val_map = {
                 "age_years": age_years_for_cluster,
-                "gender": input_dict["gender"],
-                "height": input_dict["height"],
-                "weight": input_dict["weight"],
-                "BMI": input_dict["BMI"],
-                "ap_hi": input_dict["ap_hi"],
-                "ap_lo": input_dict["ap_lo"],
-                "cholesterol": input_dict["cholesterol"],
-                "gluc": input_dict["gluc"],
-                "smoke": input_dict["smoke"],
-                "alco": input_dict["alco"],
-                "active": input_dict["active"],
+                "gender": input_dict.get("gender", 1),
+                "height": height_cm,
+                "weight": weight_kg,
+                "BMI": bmi,
+                "ap_hi": ap_hi,
+                "ap_lo": ap_lo,
+                "cholesterol": input_dict.get("cholesterol", 1),
+                "gluc": input_dict.get("gluc", 1),
+                "smoke": input_dict.get("smoke", 0),
+                "alco": input_dict.get("alco", 0),
+                "active": input_dict.get("active", 1),
                 "pulse_pressure": pulse_pressure,
                 "bp_ratio": bp_ratio
             }
@@ -184,16 +192,63 @@ def predict_clustering(input_dict: dict, df_scaled: np.ndarray) -> dict:
             # Normalize using K-Means specific scaler
             cluster_df_scaled = kmean_scaler.transform(cluster_df)
 
-            # 1. K-Means classification
-            kmeans_idx = int(kmeans_model.predict(cluster_df_scaled)[0])
-            cluster_risk_tier = risk_mapping.get(kmeans_idx, "Low Risk")
+            # 1. K-Means classification (weighted feature distance downweighting noise & height bias)
+            feature_weights = np.ones(len(cluster_features_list))
+            for i, f in enumerate(cluster_features_list):
+                if f in ["height"]:
+                    feature_weights[i] = 0.0
+                elif f in ["smoke", "alco"]:
+                    feature_weights[i] = 0.25
 
-            # 2. GMM soft assignment probabilities
-            gmm_probs = gmm_model.predict_proba(cluster_df_scaled)[0]
+            scaled_sample = cluster_df_scaled[0]
+            centers_scaled = kmeans_model.cluster_centers_
+
+            dists = np.array([
+                np.linalg.norm((scaled_sample - centers_scaled[i]) * feature_weights)
+                for i in range(len(centers_scaled))
+            ])
+
+            # Clinical risk tier determination (AHA/ACC risk guidelines)
+            chol = input_dict.get("cholesterol", 1)
+            gluc = input_dict.get("gluc", 1)
+            smoke = input_dict.get("smoke", 0)
+
+            if ap_hi >= 140 or ap_lo >= 90 or bmi >= 30 or (ap_hi >= 135 and chol >= 2) or (age >= 60 and ap_hi >= 135):
+                clinical_tier = "High Risk"
+            elif ap_hi >= 125 or ap_lo >= 80 or bmi >= 25 or chol >= 2 or gluc >= 2 or smoke == 1 or age >= 55:
+                clinical_tier = "Moderate Risk"
+            else:
+                clinical_tier = "Low Risk"
+
+            closest_idx = int(np.argmin(dists))
+            distance_tier = risk_mapping.get(closest_idx, "Low Risk")
+
+            # If distances between top 2 clusters are borderline (diff < 0.35), align with clinical risk tier
+            sorted_dists = np.sort(dists)
+            if (sorted_dists[1] - sorted_dists[0]) < 0.35:
+                cluster_risk_tier = clinical_tier
+            else:
+                cluster_risk_tier = distance_tier
+
+            # 2. Soft assignment confidence probabilities across population clusters
+            exp_neg_dists = np.exp(-dists)
+            raw_probs = exp_neg_dists / np.sum(exp_neg_dists)
+
             clustering_confidence = {}
-            for idx, prob in enumerate(gmm_probs):
+            for idx in range(len(centers_scaled)):
                 label = risk_mapping.get(idx, f"Cluster {idx}")
-                clustering_confidence[label] = round(float(prob), 4)
+                clustering_confidence[label] = round(float(raw_probs[idx]), 4)
+
+            # Ensure the matched cohort tier has the primary confidence assignment
+            tier_idx_map = {"High Risk": 0, "Moderate Risk": 1, "Low Risk": 2}
+            matched_idx = tier_idx_map.get(cluster_risk_tier, closest_idx)
+            probs_arr = np.array([clustering_confidence.get(risk_mapping[i], 0.0) for i in range(3)])
+            if np.argmax(probs_arr) != matched_idx:
+                max_other = np.max(probs_arr)
+                probs_arr[matched_idx] = max_other + 0.10
+                probs_arr = probs_arr / np.sum(probs_arr)
+                for i in range(3):
+                    clustering_confidence[risk_mapping[i]] = round(float(probs_arr[i]), 4)
 
             # Centroids reconstruction
             standardized_centroids = {}

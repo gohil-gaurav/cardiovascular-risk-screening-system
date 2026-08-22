@@ -17,7 +17,6 @@ import logging
 
 from fastapi import APIRouter, HTTPException
 
-from app.main import PatientData, predict_risk
 from app.schemas import ScreeningReport
 from app import llm_service
 
@@ -26,7 +25,7 @@ router = APIRouter()
 
 
 @router.post("/screen", response_model=ScreeningReport)
-def screen_patient(patient: PatientData) -> ScreeningReport:
+def screen_patient(patient: dict) -> ScreeningReport:
     """
     1. Run the patient through the existing predict_risk() pipeline
        (XGBoost + MLP + SHAP + KMeans clustering, already combined)
@@ -34,8 +33,14 @@ def screen_patient(patient: PatientData) -> ScreeningReport:
     3. Get a plain-language explanation from the local LLM
     4. Return one unified report (technical fields + patient-friendly fields)
     """
+    from app.main import PatientData, predict_risk
+
     try:
-        predict_response = predict_risk(patient)
+        if isinstance(patient, dict):
+            patient_obj = PatientData(**patient)
+        else:
+            patient_obj = patient
+        predict_response = predict_risk(patient_obj)
     except HTTPException:
         raise
     except Exception as exc:
@@ -45,8 +50,12 @@ def screen_patient(patient: PatientData) -> ScreeningReport:
     if predict_response.get("status") != "success":
         raise HTTPException(status_code=502, detail="Prediction pipeline returned an error")
 
-    combined = llm_service.build_combined_from_predict_response(predict_response, patient)
-    explanation = llm_service.get_llm_explanation(combined)
+    combined = llm_service.build_combined_from_predict_response(predict_response, patient_obj)
+    try:
+        explanation = llm_service.get_llm_explanation(combined)
+    except Exception as e:
+        logger.error(f"Groq API error: {e}")
+        explanation = dict(llm_service.FALLBACK_RESPONSE)
 
     return ScreeningReport(
         final_risk_pct=combined["final_risk_pct"],
@@ -54,9 +63,12 @@ def screen_patient(patient: PatientData) -> ScreeningReport:
         population_comparison_tier=combined["population_comparison_tier"],
         prediction=combined["prediction"],
         top_factors=combined["top_factors"],
+        secondary_model_comparison=combined.get("secondary_model_comparison"),
         patient_summary=explanation["patient_summary"],
         key_factors=explanation["key_factors"],
         suggested_next_step=explanation["suggested_next_step"],
+        clinician_note=explanation.get("clinician_note", ""),
+        group_context=explanation.get("group_context", ""),
         fallback_used=explanation.get("fallback_used", False),
         clustering_confidence=combined["clustering_confidence"],
     )

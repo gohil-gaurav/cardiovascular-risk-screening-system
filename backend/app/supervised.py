@@ -15,6 +15,9 @@ import numpy as np
 xgb_model = None
 explainer = None
 
+# XGBoost decision threshold tuned for high recall in cardiovascular risk screening (per classification notebook)
+XGB_DECISION_THRESHOLD = 0.45
+
 def load_supervised_model(models_dir: str):
     """
     Loads the trained XGBoost model and initializes the SHAP TreeExplainer.
@@ -35,73 +38,43 @@ def load_supervised_model(models_dir: str):
     except Exception as e:
         print(f"Error loading XGBoost model: {e}")
 
-def predict_supervised(df, input_dict: dict, height_m: float, bmi: float) -> dict:
+FEATURE_ORDER = [
+    'age', 'gender', 'height', 'weight', 'ap_hi', 'ap_lo',
+    'cholesterol', 'gluc', 'smoke', 'alco', 'active', 'BMI'
+]
+
+FEATURE_DISPLAY_NAMES = {
+    'age': 'Age',
+    'gender': 'Gender',
+    'height': 'Height',
+    'weight': 'Weight',
+    'ap_hi': 'Systolic Blood Pressure',
+    'ap_lo': 'Diastolic Blood Pressure',
+    'cholesterol': 'Cholesterol Level',
+    'gluc': 'Glucose Level',
+    'smoke': 'Smoking Status',
+    'alco': 'Alcohol Intake',
+    'active': 'Physical Activity',
+    'BMI': 'Body Mass Index (BMI)'
+}
+
+def format_shap_explanation(shap_vals, input_dict: dict):
     """
-    Runs XGBoost classification, calculates SHAP feature importance, 
-    and generates risk-specific clinical recommendations.
-    
-    Args:
-        df (pd.DataFrame): 1-row DataFrame containing scaled classification features.
-        input_dict (dict): Raw input feature values dict.
-        height_m (float): Patient height in meters.
-        bmi (float): Patient BMI value.
-        
-    Returns:
-        dict: Dictionary containing prediction result, risk score percentage,
-              mapped risk tier, SHAP baseline probabilities, feature drivers lists,
-              and clinical recommendations.
+    Reusable helper function to convert raw 1D SHAP values into structured lists:
+    - shap_list: list of dicts (feature, display_name, value, shap_value)
+    - primary_drivers: list of top risk drivers formatted with human-readable descriptions
+    - protective_factors: list of top protective factors formatted with human-readable descriptions
     """
-    if xgb_model is None or explainer is None:
-        return {}
-
-    # Run XGBoost inference
-    xgb_prob = float(xgb_model.predict_proba(df)[0][1])
-    xgb_pred = int(xgb_model.predict(df)[0])
-    xgb_risk_pct = xgb_prob * 100
-
-    # Map primary risk level
-    if xgb_risk_pct >= 75:
-        risk_level = "High Risk"
-    elif xgb_risk_pct >= 45:
-        risk_level = "Moderate Risk"
-    else:
-        risk_level = "Low Risk"
-
-    # Compute patient-level SHAP values
-    shap_vals = explainer.shap_values(df)
-    shap_expected = float(explainer.expected_value)
-    
-    # Base probability
-    base_prob = 1 / (1 + np.exp(-shap_expected))
-
-    feature_order = [
-        'age', 'gender', 'height', 'weight', 'ap_hi', 'ap_lo',
-        'cholesterol', 'gluc', 'smoke', 'alco', 'active', 'BMI'
-    ]
-
-    feature_display_names = {
-        'age': 'Age',
-        'gender': 'Gender',
-        'height': 'Height',
-        'weight': 'Weight',
-        'ap_hi': 'Systolic Blood Pressure',
-        'ap_lo': 'Diastolic Blood Pressure',
-        'cholesterol': 'Cholesterol Level',
-        'gluc': 'Glucose Level',
-        'smoke': 'Smoking Status',
-        'alco': 'Alcohol Intake',
-        'active': 'Physical Activity',
-        'BMI': 'Body Mass Index (BMI)'
-    }
+    shap_arr = np.array(shap_vals).reshape(-1)
 
     # Build SHAP list and sort features
     shap_list = []
-    for i, col in enumerate(feature_order):
+    for i, col in enumerate(FEATURE_ORDER):
         val = input_dict[col]
-        shap_val = float(shap_vals[0][i])
+        shap_val = float(shap_arr[i])
         shap_list.append({
             "feature": col,
-            "display_name": feature_display_names[col],
+            "display_name": FEATURE_DISPLAY_NAMES[col],
             "value": round(val, 1) if isinstance(val, float) else val,
             "shap_value": shap_val
         })
@@ -177,6 +150,51 @@ def predict_supervised(df, input_dict: dict, height_m: float, bmi: float) -> dic
             "importance_pct": min(100, round(weight * 100, 1)),
             "raw_val": item["shap_value"]
         })
+
+    return shap_list, primary_drivers, protective_factors
+
+def predict_supervised(df, input_dict: dict, height_m: float, bmi: float) -> dict:
+    """
+    Runs XGBoost classification, calculates SHAP feature importance, 
+    and generates risk-specific clinical recommendations.
+    
+    Args:
+        df (pd.DataFrame): 1-row DataFrame containing scaled classification features.
+        input_dict (dict): Raw input feature values dict.
+        height_m (float): Patient height in meters.
+        bmi (float): Patient BMI value.
+        
+    Returns:
+        dict: Dictionary containing prediction result, risk score percentage,
+              mapped risk tier, SHAP baseline probabilities, feature drivers lists,
+              and clinical recommendations.
+    """
+    if xgb_model is None or explainer is None:
+        return {}
+
+    # Run XGBoost inference (Primary Classifier & Single Source of Truth)
+    xgb_prob = float(xgb_model.predict_proba(df)[0][1])
+    # Use tuned threshold for high recall explicitly instead of default 0.5 predict() cutoff
+    xgb_pred = 1 if xgb_prob >= XGB_DECISION_THRESHOLD else 0
+    xgb_risk_pct = xgb_prob * 100
+
+    # Map primary risk level
+    if xgb_risk_pct >= 75:
+        risk_level = "High Risk"
+    elif xgb_risk_pct >= 45:
+        risk_level = "Moderate Risk"
+    else:
+        risk_level = "Low Risk"
+
+    # SHAP values explain the primary classifier (XGBoost) that produced the official decision,
+    # ensuring the "why" always matches the "what."
+    shap_vals = explainer.shap_values(df)
+    shap_expected = float(explainer.expected_value)
+    
+    # Base probability
+    base_prob = 1 / (1 + np.exp(-shap_expected))
+
+    shap_list, primary_drivers, protective_factors = format_shap_explanation(shap_vals[0], input_dict)
 
     # Clinical Recommendations
     recommendations = []

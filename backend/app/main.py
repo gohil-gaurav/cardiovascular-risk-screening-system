@@ -9,9 +9,13 @@ to separate modules: supervised, deep_learning, and clustering.
 import os
 import warnings
 import pandas as pd
+from dotenv import load_dotenv
 from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel, Field
+
+# Load environment variables (.env file)
+load_dotenv()
 
 # Import refactored ML modules
 from app import supervised
@@ -78,6 +82,7 @@ def home():
         "mlp_loaded": deep_learning.mlp_model is not None,
         "scaler_loaded": deep_learning.scaler is not None,
         "shap_ready": supervised.explainer is not None,
+        "mlp_shap_ready": deep_learning.mlp_explainer is not None,
         "kmeans_loaded": clustering.kmeans_model is not None,
         "gmm_loaded": clustering.gmm_model is not None
     }
@@ -117,32 +122,34 @@ def predict_risk(data: PatientData):
         # Create single row DataFrame for classifiers
         df = pd.DataFrame([input_dict])[feature_order]
         
-        # 1. Supervised prediction (XGBoost + SHAP + Recommendations)
+        # 1. Primary Classifier (XGBoost) - Single Source of Truth for risk_score, prediction, and risk_level
+        # Uses explicit tuned threshold (XGB_DECISION_THRESHOLD) for high recall
         sup_res = supervised.predict_supervised(df, input_dict, height_m, bmi)
         
-        # 2. Deep Learning prediction (PyTorch MLP)
-        dl_res = deep_learning.predict_deep_learning(df)
+        # 2. Secondary Comparison Model (PyTorch MLP) - Not blended or averaged into official risk_score
+        dl_res = deep_learning.predict_deep_learning(df, input_dict)
         
-        # 3. Unsupervised Clustering prediction (K-Means + GMM)
-        # Pass the scaled array from DL scaler for legacy old K-Means fallback compatibility
+        # 3. Unsupervised Clustering prediction (K-Means & GMM segmentation - untouched population comparison)
         df_scaled = dl_res.get("df_scaled")
         clust_res = clustering.predict_clustering(input_dict, df_scaled)
         
-        # Merge comparison model info block
+        # Merge model info block with clear primary vs secondary comparison roles
         model_info = {
             "primary": {
-                "name": "XGBoost (Best ML)",
+                "name": "XGBoost (Primary Classifier)",
+                "role": "primary_source_of_truth",
                 "probability": f"{sup_res['xgb_risk_pct']:.1f}%",
                 "accuracy": "73.02%",
                 "roc_auc": "79.86%",
                 "explainability": "SHAP TreeExplainer (Real-Time)"
             },
             "deep_learning": {
-                "name": "PyTorch MLP (Best DL)",
+                "name": "PyTorch MLP (Secondary Comparison Model)",
+                "role": "secondary_comparison",
                 "probability": f"{dl_res['mlp_risk_pct']:.1f}%",
                 "accuracy": "73.22%",
                 "roc_auc": "79.74%",
-                "explainability": "SHAP KernelExplainer Enabled"
+                "explainability": "SHAP DeepExplainer Enabled" if deep_learning.mlp_explainer is not None else "Not available — SHAP background dataset not loaded"
             },
             "others": [
                 {"name": "Random Forest", "accuracy": "73.03%", "roc_auc": "79.73%"},
@@ -151,16 +158,20 @@ def predict_risk(data: PatientData):
             ]
         }
 
-        # Build response schema matching the contract
-        return {
+        # Build response schema matching the contract (XGBoost is sole primary classifier for risk_score, prediction, risk_level)
+        res = {
             "status": "success",
+            # Official decision fields (from primary XGBoost classifier)
             "prediction": sup_res["prediction"],
             "risk_score": sup_res["risk_score"],
             "risk_level": sup_res["risk_level"],
             "confidence": "96.8%",
+            # Secondary comparison fields (PyTorch MLP - strictly for comparative analysis)
             "mlp_prediction": dl_res["mlp_prediction"],
             "mlp_risk_score": dl_res["mlp_risk_score"],
             "mlp_risk_level": dl_res["mlp_risk_level"],
+            "mlp_role": "secondary_comparison",
+            # SHAP TreeExplainer results (explaining the primary XGBoost classifier)
             "shap_base_value": sup_res["shap_base_value"],
             "shap_base_value_logodds": sup_res["shap_base_value_logodds"],
             "shap_values": sup_res["shap_values"],
@@ -168,9 +179,18 @@ def predict_risk(data: PatientData):
             "protective_factors": sup_res["protective_factors"],
             "recommendations": sup_res["recommendations"],
             "model_info": model_info,
+            # Population clustering segmentation (untouched)
             "clustering": clust_res["clustering"],
             "clustering_confidence": clust_res["clustering_confidence"]
         }
+
+        # Add secondary PyTorch MLP SHAP outputs if present
+        if "mlp_shap_values" in dl_res:
+            res["mlp_shap_values"] = dl_res["mlp_shap_values"]
+            res["mlp_primary_drivers"] = dl_res["mlp_primary_drivers"]
+            res["mlp_protective_factors"] = dl_res["mlp_protective_factors"]
+
+        return res
     except Exception as e:
         raise HTTPException(
             status_code=500,

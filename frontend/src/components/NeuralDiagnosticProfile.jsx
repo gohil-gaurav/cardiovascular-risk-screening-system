@@ -6,32 +6,19 @@ import {
   Shield,
   Activity,
   TrendingUp,
-  ChevronRight,
-  AlertTriangle,
   User,
   Droplets,
   Dumbbell,
   Wind,
-  Calendar
+  Calendar,
+  Layers,
+  Info,
+  BarChart3
 } from 'lucide-react';
 
-// ─── helpers ────────────────-------------------------------------------------
 const cholLabel = (v) =>
   v === '1' ? 'Normal' : v === '2' ? 'Above Normal' : 'Well Above Normal';
 
-// Simple SVG sparkline for metric cards
-function Sparkline({ up = true }) {
-  const d = up
-    ? 'M0,20 C10,18 20,14 30,10 C40,6 50,3 60,1'
-    : 'M0,2 C10,5 20,10 30,12 C40,16 50,18 60,20';
-  return (
-    <svg width="60" height="22" viewBox="0 0 60 22" fill="none">
-      <path d={d} stroke={up ? '#22C55E' : '#EF4444'} strokeWidth="1.8" strokeLinecap="round" />
-    </svg>
-  );
-}
-
-// Runtime consistency validation helper
 const validateRiskTier = (renderedTier, expectedTier, fieldName) => {
   if (import.meta.env.DEV) {
     const validTiers = ["Low Risk", "Moderate Risk", "High Risk"];
@@ -45,69 +32,19 @@ const validateRiskTier = (renderedTier, expectedTier, fieldName) => {
   }
 };
 
-// Half-circle gauge SVG
-function HalfGauge({ pct, tier, expectedTier }) {
-  const r = 70;
-  const cx = 100, cy = 100;
-  const circ = Math.PI * r;      // half circumference
-  const offset = circ * (1 - pct / 100);
-
-  // Validate the rendered tier
-  validateRiskTier(tier, expectedTier, "risk_tier_gauge");
-
-  const color =
-    tier === 'High Risk' ? '#EF4444' : tier === 'Moderate Risk' ? '#F59E0B' : '#22C55E';
-
-  return (
-    <svg width="200" height="110" viewBox="0 0 200 110" className="overflow-visible">
-      {/* Background arc */}
-      <path
-        d={`M ${cx - r} ${cy} A ${r} ${r} 0 0 1 ${cx + r} ${cy}`}
-        fill="none"
-        stroke="#E2E8F0"
-        strokeWidth="14"
-        strokeLinecap="round"
-      />
-      {/* Coloured fill arc */}
-      <path
-        d={`M ${cx - r} ${cy} A ${r} ${r} 0 0 1 ${cx + r} ${cy}`}
-        fill="none"
-        stroke={color}
-        strokeWidth="14"
-        strokeLinecap="round"
-        strokeDasharray={circ}
-        strokeDashoffset={offset}
-        style={{ transition: 'stroke-dashoffset 1.2s ease-out' }}
-      />
-      {/* Labels */}
-      <text x="22" y="108" fontSize="9" fill="#94A3B8" fontWeight="600">0%</text>
-      <text x="168" y="108" fontSize="9" fill="#94A3B8" fontWeight="600">100%</text>
-      {/* Centre value */}
-      <text x="100" y="88" textAnchor="middle" fontSize="26" fontWeight="800" fill="#1E293B">{pct}%</text>
-      <text x="100" y="104" textAnchor="middle" fontSize="9" fontWeight="700" fill={color} letterSpacing="1">
-        {tier.toUpperCase()}
-      </text>
-    </svg>
-  );
-}
-
-// ─── Component ────────────────────────────────────────────────────────────────
 export default function NeuralDiagnosticProfile({
-  analysisResult,
-  formData,
-  bmi,
-  bmiCategory,
+  analysisResult = {},
+  formData = {},
+  bmi = 0,
+  bmiCategory = '',
   handlePrint,
   isEmbedded = false,
-  riskTier: parentRiskTier
+  riskTier: parentRiskTier,
+  top_factors: propTopFactors,
+  secondary_model_comparison: propSecondaryComparison,
 }) {
-  const mlpScore   = Math.round(analysisResult.final_risk_pct ?? analysisResult.mlp_risk_score ?? analysisResult.risk_score ?? 0);
-  const xgbScore   = Math.round(analysisResult.final_risk_pct ?? analysisResult.risk_score ?? 0);
-  
-  // Single Source of Truth for risk tier
   const riskTier = parentRiskTier || analysisResult.risk_tier || "Low Risk";
 
-  // Validate rendering
   useEffect(() => {
     validateRiskTier(riskTier, analysisResult.risk_tier, "risk_tier");
   }, [riskTier, analysisResult.risk_tier]);
@@ -115,245 +52,120 @@ export default function NeuralDiagnosticProfile({
   const isHighRisk = riskTier === "High Risk";
   const isModRisk = riskTier === "Moderate Risk";
 
-  const cholLabelVal = cholLabel(formData.cholesterol);
-
-  // Adapting /api/screen vs /predict formats for SHAP factors
-  let shapList = [];
-  if (analysisResult.shap_values) {
-    shapList = [...analysisResult.shap_values];
-  } else if (analysisResult.top_factors) {
-    shapList = analysisResult.top_factors.map(tf => {
-      const val = parseFloat(tf.value) || 0;
+  // Resolve top_factors (Primary XGBoost classifier SHAP factors)
+  const rawTopFactors = propTopFactors || analysisResult.top_factors || [];
+  
+  // Format top_factors into standardized shape { feature, label, value, impact }
+  const topFactors = rawTopFactors.map((tf) => {
+    if (typeof tf === 'object' && tf !== null) {
       return {
-        feature: tf.feature,
-        display_name: tf.label,
-        value: tf.value,
-        shap_value: val
+        feature: tf.feature || tf.factor || 'unknown',
+        label: tf.label || tf.factor || tf.feature || 'Unknown Factor',
+        value: tf.value || tf.contribution || '',
+        impact: (tf.impact || 'moderate').toLowerCase(),
       };
-    });
-  }
+    }
+    return {
+      feature: String(tf),
+      label: String(tf),
+      value: '',
+      impact: 'moderate',
+    };
+  });
 
-  // Sort and extract top features
-  const sortedShapList = [...shapList].sort(
-    (a, b) => Math.abs(b.shap_value) - Math.abs(a.shap_value)
-  );
-  const topFeatures = sortedShapList.slice(0, 6);
-  const maxImp = Math.abs(topFeatures[0]?.shap_value || 1);
+  // Resolve secondary model comparison (PyTorch MLP)
+  const secondaryModel = propSecondaryComparison || analysisResult.secondary_model_comparison || null;
 
-  // Three-tier score mapping helper
-  const getRiskTierFromScore = (scoreVal) => {
-    if (scoreVal >= 75) return "High Risk";
-    if (scoreVal >= 45) return "Moderate Risk";
-    return "Low Risk";
+  // Impact helper for primary SHAP bars
+  const getImpactStyles = (impact) => {
+    switch (impact) {
+      case 'high':
+        return {
+          width: '100%',
+          barBg: 'linear-gradient(90deg, #1B2B6B, #3B7CF4)',
+          badgeColor: 'bg-indigo-50 text-indigo-700 border-indigo-200',
+          label: 'High Impact',
+        };
+      case 'moderate':
+        return {
+          width: '65%',
+          barBg: 'linear-gradient(90deg, #3B7CF4, #60A5FA)',
+          badgeColor: 'bg-blue-50 text-blue-700 border-blue-200',
+          label: 'Moderate Impact',
+        };
+      case 'low':
+      default:
+        return {
+          width: '35%',
+          barBg: 'linear-gradient(90deg, #60A5FA, #93C5FD)',
+          badgeColor: 'bg-sky-50 text-sky-700 border-sky-200',
+          label: 'Low Impact',
+        };
+    }
   };
 
-  // Model comparison rows mapped cleanly into three categories
-  const models = [
-    { name: 'Logistic Regression', result: getRiskTierFromScore(Math.round(xgbScore * 0.9)), pct: Math.round(xgbScore * 0.9) },
-    { name: 'Random Forest',       result: getRiskTierFromScore(Math.round(xgbScore * 0.95)), pct: Math.round(xgbScore * 0.95) },
-    { name: 'Neural Network (AI)', result: getRiskTierFromScore(mlpScore), pct: mlpScore },
-  ];
-
-  // Performance metrics
-  const metrics = [
-    { label: 'Accuracy',          val: '95.6%', up: true },
-    { label: 'Precision',         val: '94.2%', up: true },
-    { label: 'Recall',            val: '93.8%', up: true },
-    { label: 'Reliability Score', val: '94.0%', up: true },
-  ];
-
-  // Clinical explanations
-  const explanations = [
-    'Elevated blood pressure and cholesterol levels increase cardiac strain.',
-    'Age and body weight are key indicators in similar high-risk patients.',
-    'Resting blood pressure values show significant deviation from normal range.',
-    'The combination of these factors leads to an elevated risk assessment.',
-  ];
-
   const summaryRows = [
-    { label: 'Age',            val: `${formData.age} years`,                               icon: <User      className="w-3.5 h-3.5 text-slate-400" /> },
-    { label: 'Gender',         val: formData.gender === '1' ? 'Male' : 'Female',           icon: <User      className="w-3.5 h-3.5 text-slate-400" /> },
-    { label: 'BMI',            val: `${bmi} (${bmiCategory})`,                             icon: <Dumbbell  className="w-3.5 h-3.5 text-slate-400" /> },
-    { label: 'Blood Pressure', val: `${formData.ap_hi} / ${formData.ap_lo} mmHg`,          icon: <Activity  className="w-3.5 h-3.5 text-slate-400" /> },
-    { label: 'Cholesterol',    val: cholLabelVal,                                           icon: <Droplets  className="w-3.5 h-3.5 text-slate-400" /> },
-    { label: 'Smoking',        val: formData.smoke === '1' ? 'Yes' : 'No',                  icon: <Wind      className="w-3.5 h-3.5 text-slate-400" /> },
-    { label: 'Alcohol',        val: formData.alco  === '1' ? 'Yes' : 'No',                  icon: <Droplets  className="w-3.5 h-3.5 text-slate-400" /> },
+    { label: 'Age',            val: `${formData.age || '—'} years`,                     icon: <User     className="w-3.5 h-3.5 text-slate-400" /> },
+    { label: 'Gender',         val: formData.gender === '1' ? 'Male' : 'Female',         icon: <User     className="w-3.5 h-3.5 text-slate-400" /> },
+    { label: 'BMI',            val: `${bmi} (${bmiCategory || 'Normal'})`,               icon: <Dumbbell className="w-3.5 h-3.5 text-slate-400" /> },
+    { label: 'Blood Pressure', val: `${formData.ap_hi || '—'} / ${formData.ap_lo || '—'} mmHg`, icon: <Activity className="w-3.5 h-3.5 text-slate-400" /> },
+    { label: 'Cholesterol',    val: cholLabel(formData.cholesterol),                     icon: <Droplets className="w-3.5 h-3.5 text-slate-400" /> },
+    { label: 'Smoking',        val: formData.smoke === '1' ? 'Yes' : 'No',                icon: <Wind     className="w-3.5 h-3.5 text-slate-400" /> },
   ];
-
-  // Color mappings for card styling
-  let cardRiskColor = '#22C55E';
-  if (isHighRisk) {
-    cardRiskColor = '#F87171';
-  } else if (isModRisk) {
-    cardRiskColor = '#FBBF24';
-  }
 
   const content = (
-    <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
+    <div className="space-y-6">
 
-      {/* LEFT COLUMN */}
-      <div className="lg:col-span-5 space-y-6">
-
-        {/* Deep Health Result card */}
-        <div
-          className="relative overflow-hidden text-white rounded-3xl p-6 shadow-lg flex justify-between items-center gap-4"
-          style={{ background: 'linear-gradient(135deg,#1B2B6B,#0E1840)' }}
-        >
-          <div className="absolute inset-0 opacity-[0.07] pointer-events-none" style={{ background: 'radial-gradient(ellipse at top right, rgba(255,255,255,0.15), transparent)' }} />
-          <div className="z-10 space-y-3">
-            <span className="inline-block text-[10px] font-black uppercase tracking-wider rounded-full px-3 py-1" style={{ background: 'rgba(255,255,255,0.2)' }}>
-              Advanced Screening Result
-            </span>
-            <h2 className="text-3xl font-black" style={{ color: cardRiskColor }}>
-              {riskTier}
-            </h2>
-            <p className="text-xs leading-relaxed max-w-[200px]" style={{ color: 'rgba(255,255,255,0.75)' }}>
-              The neural network evaluation predicts {riskTier.toLowerCase()} for cardiovascular disease markers.
+      {/* ── SECTION 1: PRIMARY SHAP FACTOR BREAKDOWN ─────────────────────── */}
+      <div className="bg-white border border-[#DDE4EE] rounded-3xl p-6 shadow-xs space-y-5">
+        <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-2 pb-4 border-b border-slate-100">
+          <div>
+            <div className="flex items-center gap-2">
+              <span className="p-1.5 bg-[#EEF3FF] rounded-lg text-[#3B7CF4]">
+                <BarChart3 className="w-4 h-4" />
+              </span>
+              <h3 className="text-sm font-extrabold text-[#1A2440]">
+                Key factors from the primary risk assessment
+              </h3>
+            </div>
+            <p className="text-[11px] text-slate-500 mt-1">
+              Direct feature attribution (SHAP) from the primary XGBoost classifier driving the official risk tier.
             </p>
-            <div className="rounded-xl px-4 py-2.5 inline-block" style={{ background: 'rgba(255,255,255,0.12)', border: '1px solid rgba(255,255,255,0.2)' }}>
-              <span className="block text-[9px] font-bold uppercase tracking-widest" style={{ color: 'rgba(255,255,255,0.6)' }}>Vascular Risk Index</span>
-              <span className="text-2xl font-black text-white">{mlpScore}%</span>
-            </div>
           </div>
-          <img
-            src="/heart_illustration.png"
-            alt="Heart"
-            className="w-28 h-28 object-contain shrink-0 select-none opacity-80"
-            onError={e => { e.target.style.display = 'none'; }}
-          />
+          <span className="text-[10px] font-bold uppercase tracking-wider px-3 py-1 rounded-full bg-slate-100 text-slate-600 border border-slate-200">
+            Primary Model
+          </span>
         </div>
 
-        {/* Half-circle gauge */}
-        <div className="bg-white border border-slate-100 rounded-3xl p-6 shadow-sm flex flex-col items-center space-y-2">
-          <h3 className="text-sm font-bold text-slate-800 w-full">Risk Probability Gauge</h3>
-          <HalfGauge pct={mlpScore} tier={riskTier} expectedTier={analysisResult.risk_tier} />
-          {mlpScore > xgbScore && (
-            <div className="flex items-center gap-1.5 bg-emerald-50 border border-emerald-100 text-emerald-700 rounded-xl px-3 py-1.5 text-[10px] font-bold">
-              <TrendingUp className="w-3.5 h-3.5" />
-              {mlpScore - xgbScore}% higher than standard screening average
-            </div>
-          )}
-        </div>
-
-        {/* Model Comparison table */}
-        <div className="bg-white border border-slate-100 rounded-3xl p-6 shadow-sm space-y-4">
-          <div>
-            <h3 className="text-sm font-bold text-slate-800">Screening Engine Comparison</h3>
-            <p className="text-[10px] text-slate-400 mt-0.5">Compare results across different evaluation methods</p>
+        {/* SHAP Factor Bars */}
+        {topFactors.length === 0 ? (
+          <div className="p-6 bg-slate-50 border border-slate-200 rounded-2xl text-center text-xs text-slate-500 font-medium">
+            No specific factor drivers available for this screening profile.
           </div>
-          <div className="overflow-x-auto">
-            <table className="w-full text-xs">
-              <thead>
-                <tr className="border-b border-slate-100">
-                  <th className="text-left text-slate-400 font-bold pb-2.5">Method</th>
-                  <th className="text-center text-slate-400 font-bold pb-2.5">Outcome</th>
-                  <th className="text-right text-slate-400 font-bold pb-2.5">Score</th>
-                </tr>
-              </thead>
-              <tbody>
-                {models.map((m, i) => {
-                  const mHigh = m.result === "High Risk";
-                  const mMod = m.result === "Moderate Risk";
-                  let rowBadgeColor = "bg-emerald-50 text-emerald-600 border-emerald-100";
-                  if (mHigh) {
-                    rowBadgeColor = "bg-red-50 text-red-600 border-red-100";
-                  } else if (mMod) {
-                    rowBadgeColor = "bg-amber-50 text-amber-600 border-amber-100";
-                  }
-                  
-                  return (
-                    <tr key={i} className={`border-b border-slate-50 last:border-0 ${i === 2 ? 'bg-[#EEF3FF]/40' : ''}`}>
-                      <td className="py-3 flex items-center gap-2 font-semibold text-slate-700">
-                        {i === 2 && <Brain className="w-3.5 h-3.5 text-[#3B7CF4] shrink-0" />}
-                        {m.name}
-                      </td>
-                      <td className="py-3 text-center">
-                        <span className={`text-[10px] font-black uppercase px-2 py-0.5 rounded-full border ${rowBadgeColor}`}>
-                          {m.result}
-                        </span>
-                      </td>
-                      <td className="py-3 text-right">
-                        <div className="flex items-center justify-end gap-2">
-                          <div className="w-16 bg-slate-100 rounded-full h-1.5">
-                            <div className="bg-[#3B7CF4] h-full rounded-full" style={{ width: `${m.pct}%` }} />
-                          </div>
-                          <span className="font-black text-slate-900 w-10 text-right">{m.pct}%</span>
-                        </div>
-                      </td>
-                    </tr>
-                  );
-                })}
-              </tbody>
-            </table>
-          </div>
-        </div>
-
-        {/* Performance Metrics grid */}
-        <div className="bg-white border border-slate-100 rounded-3xl p-6 shadow-sm space-y-4">
-          <div>
-            <h3 className="text-sm font-bold text-slate-800">Performance Metrics</h3>
-            <p className="text-[10px] text-slate-400 mt-0.5">Neural Network evaluation accuracy</p>
-          </div>
-          <div className="grid grid-cols-2 gap-3">
-            {metrics.map((m, i) => (
-              <div key={i} className="border border-slate-100 rounded-2xl p-4 bg-slate-50/50 space-y-2">
-                <span className="block text-[10px] font-bold text-slate-500 uppercase tracking-wide">{m.label}</span>
-                <span className="block text-xl font-black text-slate-900">{m.val}</span>
-                <Sparkline up={m.up} />
-              </div>
-            ))}
-          </div>
-        </div>
-      </div>
-
-      {/* RIGHT COLUMN */}
-      <div className="lg:col-span-7 space-y-6">
-
-        {/* Patient Summary */}
-        <div className="bg-white border border-slate-100 rounded-3xl p-6 shadow-sm space-y-4">
-          <h3 className="text-sm font-bold text-slate-800">Patient Summary</h3>
-          <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
-            {summaryRows.map((r, i) => (
-              <div key={i} className="border border-slate-100 rounded-2xl p-3.5 bg-slate-50/50 space-y-1.5">
-                <div className="flex items-center gap-1.5">
-                  {r.icon}
-                  <span className="block text-[10px] font-bold text-slate-400 uppercase tracking-wide">{r.label}</span>
-                </div>
-                <span className="block text-xs font-black text-slate-900">{r.val}</span>
-              </div>
-            ))}
-          </div>
-        </div>
-
-        {/* Feature Importance chart */}
-        <div className="bg-white border border-slate-100 rounded-3xl p-6 shadow-sm space-y-4">
-          <div>
-            <h3 className="text-sm font-bold text-slate-800">Key Diagnostic Factors (SHAP)</h3>
-            <p className="text-[10px] text-slate-400 mt-0.5">Top markers influencing the neural health assessment</p>
-          </div>
+        ) : (
           <div className="space-y-4">
-            {topFeatures.length === 0 && (
-              <p className="text-xs text-slate-400">No marker data available from this screening.</p>
-            )}
-            {topFeatures.map((f, i) => {
-              const pct = Math.max(4, Math.round((Math.abs(f.shap_value) / maxImp) * 100));
-              const isRisk = f.shap_value > 0;
+            {topFactors.map((factor, idx) => {
+              const styles = getImpactStyles(factor.impact);
               return (
-                <div key={i}>
-                  <div className="flex justify-between items-center mb-1.5">
-                    <span className="text-xs text-slate-700 font-semibold">{f.display_name}</span>
-                    <span className="text-[10px] font-black" style={{ color: isRisk ? '#EF4444' : '#059669' }}>
-                      {f.shap_value > 0 ? '+' : ''}{f.shap_value.toFixed(2)}
-                    </span>
+                <div key={idx} className="space-y-1.5 p-3 rounded-2xl bg-[#F8FAFD] border border-[#EDF2FA]">
+                  <div className="flex justify-between items-center text-xs">
+                    <span className="font-extrabold text-[#1A2440]">{factor.label}</span>
+                    <div className="flex items-center gap-2">
+                      {factor.value && (
+                        <span className="text-[11px] font-mono text-slate-600 font-semibold">{factor.value}</span>
+                      )}
+                      <span className={`text-[9px] font-black uppercase px-2 py-0.5 rounded-full border ${styles.badgeColor}`}>
+                        {styles.label}
+                      </span>
+                    </div>
                   </div>
-                  <div className="w-full bg-slate-100 rounded-full h-2.5">
+                  {/* Bar */}
+                  <div className="w-full bg-slate-100 rounded-full h-2.5 overflow-hidden">
                     <div
-                      className="h-2.5 rounded-full transition-all duration-700"
+                      className="h-full rounded-full transition-all duration-700"
                       style={{
-                        width: `${pct}%`,
-                        background: isRisk
-                          ? 'linear-gradient(90deg,#EF4444,#B91C1C)'
-                          : 'linear-gradient(90deg,#3B7CF4,#6355F5)'
+                        width: styles.width,
+                        background: styles.barBg,
                       }}
                     />
                   </div>
@@ -361,86 +173,74 @@ export default function NeuralDiagnosticProfile({
               );
             })}
           </div>
-          <p className="text-[9px] text-slate-400">Higher values indicate stronger influence on the risk assessment.</p>
-        </div>
-
-        {/* Clinical Explanation */}
-        <div className="bg-white border border-slate-100 rounded-3xl p-6 shadow-sm space-y-4">
-          <div className="flex items-start gap-3">
-            <div className="p-2.5 bg-[#EEF3FF] rounded-xl shrink-0">
-              <Brain className="w-5 h-5 text-[#3B7CF4]" />
-            </div>
-            <div>
-              <h3 className="text-sm font-bold text-slate-800">Clinical Pattern Explanation</h3>
-              <p className="text-[10px] text-slate-400 mt-0.5">
-                The neural network has analysed multiple complex patterns in your health data.
-              </p>
-            </div>
-          </div>
-          <div className="space-y-2.5">
-            {explanations.map((e, i) => (
-              <div key={i} className="flex items-center gap-3 bg-slate-50 border border-slate-100 rounded-xl p-3.5">
-                <span className="p-1 bg-[#3B7CF4] rounded-lg shrink-0">
-                  <Check className="w-3.5 h-3.5 text-white" />
-                </span>
-                <span className="text-xs font-semibold text-slate-700">{e}</span>
-              </div>
-            ))}
-          </div>
-        </div>
-
-        {/* Final Recommendation */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
-          <div
-            className="rounded-3xl p-6 space-y-3"
-            style={{
-              background: isHighRisk ? '#FEF2F2' : isModRisk ? '#FFFBEB' : '#ECFDF5',
-              border: `1.5px solid ${isHighRisk ? '#FECACA' : isModRisk ? '#FDE68A' : '#A7F3D0'}`
-            }}
-          >
-            <div className="flex items-center gap-2.5">
-              <div
-                className="p-2 rounded-xl"
-                style={{ background: isHighRisk ? '#EF4444' : isModRisk ? '#F59E0B' : '#22C55E' }}
-              >
-                <Shield className="w-4 h-4 text-white" />
-              </div>
-              <h3 className="text-sm font-bold text-slate-800">Final Recommendation</h3>
-            </div>
-            <p className="text-xs text-slate-600 leading-relaxed font-medium">
-              {isHighRisk
-                ? 'Assessments indicate HIGH RISK. It is strongly recommended to consult a cardiologist for further evaluation and follow a target cardiovascular care plan.'
-                : isModRisk
-                ? 'Assessments indicate MODERATE RISK. Standard lifestyle modifications, regular blood pressure monitoring, and general periodic reviews are advised.'
-                : 'Assessments indicate LOW RISK. Continue healthy lifestyle habits, active physical exercise, and schedule standard periodic follow-ups.'}
-            </p>
-          </div>
-
-          <div className="space-y-4">
-            {/* Next step */}
-            <div className="bg-white border border-slate-100 rounded-3xl p-5 shadow-sm flex items-center gap-4">
-              <div className="p-3 bg-violet-50 rounded-2xl shrink-0">
-                <Calendar className="w-5 h-5 text-violet-600" />
-              </div>
-              <div>
-                <span className="block text-[9px] font-black text-slate-400 uppercase tracking-widest">Next Step</span>
-                <p className="text-xs font-bold text-slate-800 mt-0.5">Schedule a consultation with your specialist</p>
-              </div>
-            </div>
-
-            {/* Download PDF */}
-            <button
-              onClick={handlePrint}
-              className="w-full flex items-center justify-center gap-2 text-white py-3.5 rounded-2xl text-xs font-bold shadow-sm active:scale-95 transition-all cursor-pointer no-print"
-              style={{ background: 'linear-gradient(135deg,#1B2B6B,#2D3F8F)' }}
-            >
-              <Printer className="w-4 h-4" />
-              Download Neural Report PDF
-            </button>
-          </div>
-        </div>
-
+        )}
       </div>
+
+      {/* ── SECTION 2: SECONDARY MODEL REASONING (SEPARATE & COMPARATIVE) ── */}
+      {secondaryModel && (
+        <div className="bg-[#FAFBFD] border border-slate-200 rounded-3xl p-6 space-y-4">
+          <div className="flex items-center justify-between pb-3 border-b border-slate-200">
+            <div className="flex items-center gap-2">
+              <span className="p-1.5 bg-slate-200 rounded-lg text-slate-700">
+                <Layers className="w-4 h-4" />
+              </span>
+              <div>
+                <h4 className="text-xs font-black uppercase tracking-wider text-slate-700">
+                  Secondary model's reasoning (for comparison)
+                </h4>
+                <p className="text-[10px] text-slate-500">
+                  Deep Learning PyTorch MLP output — strictly for comparative clinical reference.
+                </p>
+              </div>
+            </div>
+            <span className="text-[9px] font-black uppercase px-2.5 py-1 rounded-lg bg-slate-200 text-slate-600">
+              Comparative Reference
+            </span>
+          </div>
+
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 text-xs">
+            <div className="bg-white border border-slate-200 rounded-xl p-3 space-y-1">
+              <span className="block text-[9px] font-black text-slate-400 uppercase">PyTorch MLP Risk</span>
+              <span className="block text-base font-extrabold text-slate-800">
+                {secondaryModel.mlp_risk_score !== undefined && secondaryModel.mlp_risk_score !== null
+                  ? `${secondaryModel.mlp_risk_score}%`
+                  : 'N/A'}
+              </span>
+            </div>
+            <div className="bg-white border border-slate-200 rounded-xl p-3 space-y-1">
+              <span className="block text-[9px] font-black text-slate-400 uppercase">MLP Risk Level</span>
+              <span className="block text-sm font-bold text-slate-800">
+                {secondaryModel.mlp_risk_level || 'N/A'}
+              </span>
+            </div>
+            <div className="bg-white border border-slate-200 rounded-xl p-3 space-y-1">
+              <span className="block text-[9px] font-black text-slate-400 uppercase">MLP Prediction</span>
+              <span className="block text-sm font-bold text-slate-800">
+                {secondaryModel.mlp_prediction === 1 ? 'Disease Detected' : secondaryModel.mlp_prediction === 0 ? 'No Disease' : 'N/A'}
+              </span>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ── SECTION 3: PATIENT BIOMETRIC SUMMARY GRID ─────────────────────── */}
+      <div className="bg-white border border-[#DDE4EE] rounded-3xl p-6 shadow-xs space-y-4">
+        <h3 className="text-xs font-black uppercase tracking-wider text-slate-700">
+          Patient Biometric Snapshot
+        </h3>
+        <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
+          {summaryRows.map((r, i) => (
+            <div key={i} className="border border-slate-100 rounded-2xl p-3 bg-slate-50/60 space-y-1">
+              <div className="flex items-center gap-1.5">
+                {r.icon}
+                <span className="block text-[10px] font-bold text-slate-400 uppercase tracking-wide">{r.label}</span>
+              </div>
+              <span className="block text-xs font-black text-slate-900">{r.val}</span>
+            </div>
+          ))}
+        </div>
+      </div>
+
     </div>
   );
 
@@ -450,34 +250,16 @@ export default function NeuralDiagnosticProfile({
 
   return (
     <div className="min-h-screen font-sans p-4 md:p-8 space-y-8" style={{ background: '#E8ECF2', color: '#1A2440' }}>
-      {/* ── Page Header ─────────────────────────────────────────────── */}
-      <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 border-b border-slate-200 pb-5">
-        <div className="flex items-center gap-3">
+      <div className="flex justify-between items-center border-b border-slate-200 pb-5">
+        <div>
           <h1 className="text-2xl font-extrabold tracking-tight text-slate-900">
-            Deep Learning Health Screening
+            Neural Diagnostic Profile
           </h1>
-          <span
-            className="hidden md:inline-block text-[10px] font-black uppercase tracking-wider px-3 py-1 rounded-full border"
-            style={{ background: '#F0FDF9', color: '#065F46', borderColor: '#A7F3D0' }}
-          >
-            Neural Network
-          </span>
-        </div>
-
-        {/* Accuracy badge */}
-        <div className="flex items-center gap-3 bg-white border border-slate-200 rounded-2xl px-5 py-3 shadow-sm shrink-0">
-          <div>
-            <span className="block text-[10px] font-bold text-slate-400 uppercase tracking-wider">Overall Performance</span>
-            <span className="block text-xl font-black" style={{ color: '#0F766E' }}>95.6%</span>
-          </div>
-          <TrendingUp className="w-8 h-8" style={{ color: '#34D399' }} />
+          <p className="text-xs text-slate-500 mt-1">
+            Technical explainability details for primary and secondary risk models.
+          </p>
         </div>
       </div>
-
-      <p className="text-xs text-slate-500 -mt-4">
-        An advanced health evaluation using pattern recognition trained on thousands of patient records.
-      </p>
-
       {content}
     </div>
   );
