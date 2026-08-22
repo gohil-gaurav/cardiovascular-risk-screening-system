@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Heart } from 'lucide-react';
 
-export default function Navbar({ onGetStarted, onGoHome, isScreeningPage }) {
+export default function Navbar({ onGetStarted, onGoHome, onOpenRecords, isScreeningPage, isRecordsPage }) {
   const [scrolled, setScrolled] = useState(false);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
@@ -23,7 +23,7 @@ export default function Navbar({ onGetStarted, onGoHome, isScreeningPage }) {
   const handleNavClick = (e, href) => {
     e.preventDefault();
     setMobileMenuOpen(false);
-    if (isScreeningPage && onGoHome) {
+    if ((isScreeningPage || isRecordsPage) && onGoHome) {
       onGoHome();
       setTimeout(() => {
         const element = document.querySelector(href);
@@ -77,7 +77,7 @@ export default function Navbar({ onGetStarted, onGoHome, isScreeningPage }) {
         </a>
 
         {/* Center: Desktop Navigation */}
-        {!isScreeningPage && (
+        {!isScreeningPage && !isRecordsPage && (
           <nav className="hidden md:flex items-center gap-8">
             {navLinks.map((link) => (
               <a
@@ -92,8 +92,15 @@ export default function Navbar({ onGetStarted, onGoHome, isScreeningPage }) {
           </nav>
         )}
 
-        {/* Right: Primary Button */}
-        <div className="hidden md:flex items-center">
+        {/* Right: Buttons */}
+        <div className="hidden md:flex items-center gap-3">
+          <button
+            onClick={onOpenRecords}
+            className="border border-[#D2E2F0] bg-white hover:bg-[#EBF1F6] text-[#102A43] text-sm font-semibold px-4 py-2.5 rounded-xl transition-all shadow-xs cursor-pointer"
+          >
+            Doctor Portal (Records)
+          </button>
+
           <button
             onClick={onGetStarted}
             className="bg-[#102A43] hover:bg-[#071624] text-white text-sm font-semibold px-5 py-2.5 rounded-xl transition-all shadow-sm active:scale-[0.98] cursor-pointer"
@@ -138,7 +145,7 @@ export default function Navbar({ onGetStarted, onGoHome, isScreeningPage }) {
       {/* Mobile Menu Dropdown */}
       {mobileMenuOpen && (
         <div className="md:hidden border-b px-6 py-4 space-y-3 bg-[#EBF1F6] border-[#D2E2F0]">
-          {!isScreeningPage && navLinks.map((link) => (
+          {!isScreeningPage && !isRecordsPage && navLinks.map((link) => (
             <a
               key={link.name}
               href={link.href}
@@ -151,9 +158,18 @@ export default function Navbar({ onGetStarted, onGoHome, isScreeningPage }) {
           <button
             onClick={() => {
               setMobileMenuOpen(false);
+              if (onOpenRecords) onOpenRecords();
+            }}
+            className="w-full border border-[#D2E2F0] bg-white hover:bg-[#EBF1F6] text-[#102A43] text-sm font-semibold px-4 py-2.5 rounded-xl transition-colors text-center cursor-pointer"
+          >
+            Doctor Portal (Records)
+          </button>
+          <button
+            onClick={() => {
+              setMobileMenuOpen(false);
               if (onGetStarted) onGetStarted();
             }}
-            className="w-full mt-2 bg-[#102A43] hover:bg-[#071624] text-white text-sm font-semibold px-4 py-2.5 rounded-xl transition-colors text-center cursor-pointer"
+            className="w-full bg-[#102A43] hover:bg-[#071624] text-white text-sm font-semibold px-4 py-2.5 rounded-xl transition-colors text-center cursor-pointer"
           >
             Check Risk Now
           </button>
@@ -161,4 +177,4 @@ export default function Navbar({ onGetStarted, onGoHome, isScreeningPage }) {
       )}
     </header>
   );
-}
+}

@@ -1,0 +1,28 @@
+[
+  {
+    "version": "v1",
+    "model_file": "best_model.pkl",
+    "accuracy": 0.7302,
+    "roc_auc": 0.7986,
+    "trained_at": "2026-08-01T00:00:00Z",
+    "records_count": 46342,
+    "notes": "Initial baseline model trained by Student A using XGBoost classifier."
+  },
+  {
+    "version": "v2",
+    "model_file": "best_model_v2.pkl",
+    "accuracy": 0.734,
+    "roc_auc": 0.8012,
+    "precision": 0.7337,
+    "recall": 0.7245,
+    "f1": 0.729,
+    "trained_at": "2026-08-22T03:11:04.321292Z",
+    "records_count": 46344,
+    "new_confirmed_records_added": 2,
+    "best_params": {
+      "learning_rate": 0.05,
+      "max_depth": 5,
+      "n_estimators": 100
+    }
+  }
+]

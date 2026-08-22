@@ -15,7 +15,9 @@ Mount this router at the BOTTOM of main.py (after predict_risk is defined):
 
 import logging
 
-from fastapi import APIRouter, HTTPException
+from fastapi import APIRouter, HTTPException, Depends
+from sqlalchemy.orm import Session
+from app.database import get_db
 
 from app.schemas import ScreeningReport
 from app import llm_service
@@ -25,7 +27,7 @@ router = APIRouter()
 
 
 @router.post("/screen", response_model=ScreeningReport)
-def screen_patient(patient: dict) -> ScreeningReport:
+def screen_patient(patient: dict, db: Session = Depends(get_db)) -> ScreeningReport:
     """
     1. Run the patient through the existing predict_risk() pipeline
        (XGBoost + MLP + SHAP + KMeans clustering, already combined)
@@ -40,7 +42,8 @@ def screen_patient(patient: dict) -> ScreeningReport:
             patient_obj = PatientData(**patient)
         else:
             patient_obj = patient
-        predict_response = predict_risk(patient_obj)
+        predict_response = predict_risk(patient_obj, db=db)
+
     except HTTPException:
         raise
     except Exception as exc:
@@ -71,4 +74,6 @@ def screen_patient(patient: dict) -> ScreeningReport:
         group_context=explanation.get("group_context", ""),
         fallback_used=explanation.get("fallback_used", False),
         clustering_confidence=combined["clustering_confidence"],
+        screening_id=predict_response.get("screening_id"),
     )
+

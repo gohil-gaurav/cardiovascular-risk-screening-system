@@ -34,3 +34,5 @@ class ScreeningReport(BaseModel):
     clinician_note: str
     group_context: str
     fallback_used: bool = False
+    screening_id: int | None = None
+
