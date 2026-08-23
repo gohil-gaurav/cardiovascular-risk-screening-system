@@ -7,6 +7,7 @@ Note: patient input reuses the existing `PatientData` model already
 defined in main.py - no need to duplicate it here.
 """
 
+from typing import Any
 from pydantic import BaseModel
 
 
@@ -24,9 +25,14 @@ class ScreeningReport(BaseModel):
     population_comparison_tier: str  # B's KMeans cluster label, kept separate for technical/doctor view
     prediction: str
     top_factors: list[TopFactor]
+    secondary_model_comparison: dict[str, Any] | None = None
     clustering_confidence: dict[str, float] = None
     # patient-facing plain language
     patient_summary: str
     key_factors: list[str]
     suggested_next_step: str
+    clinician_note: str
+    group_context: str
     fallback_used: bool = False
+    screening_id: int | None = None
+

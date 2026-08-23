@@ -51,6 +51,8 @@ export default function DiseaseRiskScreening({
   const patientSummary = analysisResult.patient_summary || "Screening completed. Review details below.";
   const keyFactors = analysisResult.key_factors || [];
   const suggestedNextStep = analysisResult.suggested_next_step || "Consult with your healthcare practitioner.";
+  const clinicianNote = analysisResult.clinician_note || "";
+  const groupContext = analysisResult.group_context || "";
   const fallbackUsed = analysisResult.fallback_used ?? false;
   const populationTier = analysisResult.population_comparison_tier || "Low Risk";
 
@@ -178,6 +180,12 @@ export default function DiseaseRiskScreening({
                 <p className="text-sm text-[#4A5F73] leading-relaxed font-semibold">
                   {patientSummary}
                 </p>
+                {groupContext && (
+                  <div className="pt-2 border-t border-[#E8EEF5] text-xs text-[#5B6E85] font-medium italic flex items-center gap-1.5">
+                    <Users className="w-3.5 h-3.5 text-[#3B7CF4] shrink-0" />
+                    <span>{groupContext}</span>
+                  </div>
+                )}
               </div>
 
               {/* Key Factors Chips */}
@@ -267,6 +275,12 @@ export default function DiseaseRiskScreening({
               <p className="text-xs text-slate-500 font-medium">
                 Analysis compared against broader diagnostic populations (Unsupervised KMeans Clustering).
               </p>
+              {clinicianNote && (
+                <div className="mt-2 p-2.5 rounded-xl bg-slate-200/60 border border-slate-300 text-xs font-semibold text-slate-800 flex items-start gap-2">
+                  <Brain className="w-4 h-4 text-indigo-600 shrink-0 mt-0.5" />
+                  <span><strong>Clinical Note:</strong> {clinicianNote}</span>
+                </div>
+              )}
             </div>
             
             {/* Population comparison card */}
@@ -279,7 +293,7 @@ export default function DiseaseRiskScreening({
                   Population Comparison
                   <Info className="w-3 h-3 text-[#9DAABB] cursor-help" />
                 </span>
-                <span className="block text-sm font-bold text-slate-800">{riskTier}</span>
+                <span className="block text-sm font-bold text-slate-800">{populationTier}</span>
               </div>
               
               {/* Floating Tooltip */}
@@ -321,6 +335,8 @@ export default function DiseaseRiskScreening({
                 formData={formData} 
                 bmi={bmi}
                 isEmbedded={true}
+                population_comparison_tier={populationTier}
+                clustering_confidence={analysisResult.clustering_confidence}
               />
             ) : (
               <NeuralDiagnosticProfile 
@@ -331,6 +347,8 @@ export default function DiseaseRiskScreening({
                 handlePrint={handlePrint}
                 isEmbedded={true}
                 riskTier={riskTier}
+                top_factors={analysisResult.top_factors}
+                secondary_model_comparison={analysisResult.secondary_model_comparison}
               />
             )}
           </div>

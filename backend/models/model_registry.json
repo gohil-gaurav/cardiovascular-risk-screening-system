@@ -1,0 +1,62 @@
+{
+  "v1": {
+    "version": "v1",
+    "model_file": "best_model.pkl",
+    "trained_at": "2026-08-01T00:00:00Z",
+    "accuracy": 73.02,
+    "roc_auc": 79.86,
+    "num_training_records": 46342,
+    "num_new_confirmed_records": 0,
+    "status": "promoted",
+    "promoted_at": "2026-08-01T00:00:00Z",
+    "rejected_reason": null
+  },
+  "v3": {
+    "version": "v3",
+    "model_file": "best_model_v3.pkl",
+    "trained_at": "2026-08-22T03:27:49.816785+00:00",
+    "accuracy": 73.4,
+    "roc_auc": 80.12,
+    "num_training_records": 46344,
+    "num_new_confirmed_records": 2,
+    "status": "promoted",
+    "promoted_at": "2026-08-22T03:27:49.816785+00:00",
+    "rejected_reason": null
+  },
+  "v4": {
+    "version": "v4",
+    "model_file": "best_model_v4.pkl",
+    "trained_at": "2026-08-22T03:28:18.105964+00:00",
+    "accuracy": 73.4,
+    "roc_auc": 80.12,
+    "num_training_records": 46344,
+    "num_new_confirmed_records": 2,
+    "status": "promoted",
+    "promoted_at": "2026-08-22T03:28:18.105964+00:00",
+    "rejected_reason": null
+  },
+  "v5": {
+    "version": "v5",
+    "model_file": "best_model_v5.pkl",
+    "trained_at": "2026-08-22T03:28:50.825597+00:00",
+    "accuracy": 73.4,
+    "roc_auc": 80.12,
+    "num_training_records": 46344,
+    "num_new_confirmed_records": 2,
+    "status": "promoted",
+    "promoted_at": "2026-08-22T03:28:50.825597+00:00",
+    "rejected_reason": null
+  },
+  "v6": {
+    "version": "v6",
+    "model_file": "archived/best_model_v6.pkl",
+    "trained_at": "2026-08-22T04:12:11.963947+00:00",
+    "accuracy": 73.35,
+    "roc_auc": 80.12,
+    "num_training_records": 46347,
+    "num_new_confirmed_records": 5,
+    "status": "promoted",
+    "promoted_at": "2026-08-22T04:12:11.963947+00:00",
+    "rejected_reason": null
+  }
+}

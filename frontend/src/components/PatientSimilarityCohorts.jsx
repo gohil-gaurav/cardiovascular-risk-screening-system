@@ -1,432 +1,272 @@
-import React, { useEffect } from 'react';
+import React from 'react';
 import {
   Users,
-  ChevronRight,
   Check,
-  Calendar,
   Activity,
   Dumbbell,
   Heart,
   Droplets,
-  Apple,
-  TrendingUp
+  Info,
+  AlertCircle,
+  HelpCircle
 } from 'lucide-react';
 
-// ─── deterministic scatter-point generator ────────────────────────────────────
-function generatePoints(cx, cy, count, seed) {
-  const pts = [];
-  let s = seed;
-  for (let i = 0; i < count; i++) {
-    s = (s * 9301 + 49297) % 233280;
-    const r = (s / 233280) * 22;
-    s = (s * 9301 + 49297) % 233280;
-    const theta = (s / 233280) * 2 * Math.PI;
-    pts.push({ x: cx + r * Math.cos(theta), y: cy + r * Math.sin(theta) });
-  }
-  return pts;
-}
-
-// Runtime consistency validation helper
-const validateRiskTier = (renderedTier, expectedTier, fieldName) => {
-  if (import.meta.env.DEV) {
-    const validTiers = ["Low Risk", "Moderate Risk", "High Risk"];
-    if (validTiers.includes(renderedTier) && renderedTier !== expectedTier) {
-      console.warn(
-        `[NovusAI Consistency Warning]: Component rendered risk tier label "${renderedTier}" ` +
-        `which does not match the source-of-truth risk_tier "${expectedTier}". ` +
-        `It was bound to or derived from "${fieldName}" instead of the API risk_tier.`
-      );
-    }
-  }
-};
-
-// ─── helpers ────────────────-------------------------------------------------
-const groupName = (tier) =>
-  tier === 'High Risk'
-    ? 'High Risk Group'
-    : tier === 'Moderate Risk'
-    ? 'Moderate Risk Group'
-    : 'Healthy Lifestyle Group';
-
-const groupLabel = (tier) =>
-  tier === 'High Risk' ? 'HR' : tier === 'Moderate Risk' ? 'MR' : 'HL';
-
-const tierColor = (tier) => ({
-  bgHex:    tier === 'High Risk' ? '#EF4444'  : tier === 'Moderate Risk' ? '#F59E0B'  : '#22C55E',
-  textHex:  tier === 'High Risk' ? '#B91C1C'  : tier === 'Moderate Risk' ? '#B45309'  : '#065F46',
-  borderHex:tier === 'High Risk' ? '#FECACA'  : tier === 'Moderate Risk' ? '#FDE68A'  : '#6EE7B7',
-  gradient: tier === 'High Risk'
-    ? 'linear-gradient(135deg,#7F1D1D,#991B1B)'
-    : tier === 'Moderate Risk'
-    ? 'linear-gradient(135deg,#78350F,#92400E)'
-    : 'linear-gradient(135deg,#1B2B6B,#2D3F8F)',
-  dot:      tier === 'High Risk' ? '#EF4444' : tier === 'Moderate Risk' ? '#F59E0B' : '#22C55E',
-});
-
-const groupTraits = {
+const traitMap = {
   'High Risk': [
-    'Higher body weight or body mass index (BMI)',
-    'High blood pressure levels (Systolic and Diastolic)',
-    'Elevated cholesterol and blood glucose averages',
-    'Lower frequency of daily physical activity',
-    'Higher chance of developing heart disease',
+    'Higher biological strain across blood pressure parameters',
+    'Elevated cholesterol or glucose measurements',
+    'Higher average BMI compared to healthy reference cohorts',
+    'Potential requirement for supervised clinical evaluation',
   ],
   'Moderate Risk': [
-    'Borderline blood pressure or weight levels',
-    'Moderate cholesterol with slight glucose variations',
-    'Irregular or moderate weekly physical exercise',
-    'Early indicators of cardiovascular strain',
+    'Borderline blood pressure or weight parameters',
+    'Slight cholesterol or glucose elevations',
+    'Variability in physical activity routines',
+    'Responds well to structured preventive lifestyle adjustments',
   ],
   'Low Risk': [
-    'Optimal body weight and BMI',
-    'Normal and healthy resting blood pressure',
-    'Normal cholesterol and blood glucose levels',
-    'Consistent daily physical exercise and healthy diet',
+    'Optimal resting blood pressure ranges',
+    'Healthy body mass index and cholesterol profiles',
+    'Active daily lifestyle and healthy dietary habits',
+    'Low historical correlation with cardiac events',
   ],
-  'Healthy Lifestyle Group': [
-    'Optimal body weight and BMI',
-    'Normal and healthy resting blood pressure',
-    'Normal cholesterol and blood glucose levels',
-    'Consistent daily physical exercise and healthy diet',
-  ]
 };
 
-const lifestyleTips = [
-  { label: 'Reduce Salt Intake',        icon: <Droplets className="w-5 h-5 text-blue-500" /> },
-  { label: '30 Min Exercise Daily',      icon: <Activity className="w-5 h-5 text-orange-500" /> },
-  { label: 'Maintain Healthy Weight',   icon: <Dumbbell className="w-5 h-5 text-purple-500" /> },
-  { label: 'Eat More Fruits & Veggies', icon: <Apple   className="w-5 h-5 text-green-500" /> },
-  { label: 'Regular Health Check-ups',  icon: <Heart   className="w-5 h-5 text-red-500" /> },
-];
-
-// ─── Component ────────────────------------------------------------------------
 export default function PatientSimilarityCohorts({
-  analysisResult,
-  formData,
-  bmi,
-  isEmbedded = false
+  analysisResult = {},
+  formData = {},
+  bmi = 0,
+  isEmbedded = false,
+  population_comparison_tier: propPopulationTier,
+  clustering_confidence: propClusteringConfidence,
 }) {
-  const primaryRiskTier = analysisResult.risk_tier || "Low Risk";
-  const tier = primaryRiskTier;
+  // Extract population comparison tier
+  const populationTier =
+    propPopulationTier ||
+    analysisResult.population_comparison_tier ||
+    analysisResult.clustering?.risk_tier ||
+    "Low Risk";
 
-  // Validate primary risk tier
-  useEffect(() => {
-    validateRiskTier(primaryRiskTier, analysisResult.risk_tier, "risk_tier");
-  }, [primaryRiskTier, analysisResult.risk_tier]);
+  // Extract GMM clustering confidence breakdown
+  const confidenceData =
+    propClusteringConfidence ||
+    analysisResult.clustering_confidence ||
+    analysisResult.clustering?.confidence ||
+    null;
 
-  // Scaffolding centroid and cluster distribution maps if not in response
-  const centroids = analysisResult.clustering?.centroids ?? {
-    "High Risk": { age: 55.2, BMI: 31.8, ap_hi: 139.2, ap_lo: 87.9, cholesterol: 1.81, gluc: 1.51 },
-    "Moderate Risk": { age: 51.8, BMI: 26.7, ap_hi: 127.7, ap_lo: 82.1, cholesterol: 1.37, gluc: 1.20 },
-    "Low Risk": { age: 51.7, BMI: 25.2, ap_hi: 119.5, ap_lo: 77.7, cholesterol: 1.12, gluc: 1.08 }
+  // Safe fallback for probabilities if confidence object is not present
+  const conf = confidenceData || {
+    "Low Risk": populationTier === "Low Risk" ? 0.85 : 0.08,
+    "Moderate Risk": populationTier === "Moderate Risk" ? 0.85 : 0.08,
+    "High Risk": populationTier === "High Risk" ? 0.85 : 0.08,
   };
 
-  const distribution = analysisResult.clustering?.distribution ?? {
-    "Low Risk": 0.5827,
-    "Moderate Risk": 0.0974,
-    "High Risk": 0.3199
-  };
+  const lowProb = typeof conf["Low Risk"] === 'number' ? conf["Low Risk"] : 0;
+  const modProb = typeof conf["Moderate Risk"] === 'number' ? conf["Moderate Risk"] : 0;
+  const highProb = typeof conf["High Risk"] === 'number' ? conf["High Risk"] : 0;
 
-  const centroid = centroids[tier] || centroids["Low Risk"];
-  const color     = tierColor(tier);
-  const traits    = groupTraits[tier] || groupTraits['Low Risk'];
+  // Calculate percentages (sum to 100% or normalized)
+  const totalConf = (lowProb + modProb + highProb) || 1;
+  const lowPct = Math.round((lowProb / totalConf) * 100);
+  const modPct = Math.round((modProb / totalConf) * 100);
+  const highPct = Math.round((highProb / totalConf) * 100);
 
-  const heightM   = parseFloat(formData.height) / 100;
-  const groupWeight = Math.round((centroid.BMI || 25) * heightM * heightM);
-  const totalPts  = Math.round((distribution[tier] || 0.33) * 7000);
+  // Check if profile is borderline (top two probabilities are close)
+  const sortedProbs = [
+    { tier: "Low Risk", pct: lowPct, raw: lowProb },
+    { tier: "Moderate Risk", pct: modPct, raw: modProb },
+    { tier: "High Risk", pct: highPct, raw: highProb },
+  ].sort((a, b) => b.raw - a.raw);
 
-  // comparison rows
-  const compareRows = [
-    { marker: 'Blood Pressure', yours: `${formData.ap_hi} / ${formData.ap_lo}`,    group: `${Math.round(centroid.ap_hi || 120)} / ${Math.round(centroid.ap_lo || 80)}` },
-    { marker: 'BMI',            yours: `${bmi}`,                                    group: `${centroid.BMI ?? '—'}` },
-    { marker: 'Cholesterol',    yours: formData.cholesterol === '1' ? '≤200 mg/dL' : formData.cholesterol === '2' ? '201–240 mg/dL' : '>240 mg/dL',
-                                group: centroid.cholesterol === 1 ? 'Normal' : 'Elevated' },
-    { marker: 'Weight',         yours: `${formData.weight} kg`,                     group: `${groupWeight} kg` },
-    { marker: 'Age',            yours: `${formData.age} yrs`,                       group: `${Math.round(centroid.age || 50)} yrs` },
-  ];
+  const top1 = sortedProbs[0];
+  const top2 = sortedProbs[1];
+  const isBorderline = (top1.raw >= 0.35 && top2.raw >= 0.35) || (top1.raw - top2.raw < 0.20 && top1.raw < 0.70);
 
-  // feature influence bars (% of max)
-  const features = [
-    { name: 'Blood Pressure', val: 0.42 },
-    { name: 'Cholesterol',    val: 0.31 },
-    { name: 'BMI',            val: 0.27 },
-    { name: 'Glucose',        val: 0.19 },
-    { name: 'Age',            val: 0.14 },
-  ];
-  const maxVal = features[0].val;
+  // Color mapping for population tier badge
+  const isHigh = populationTier === "High Risk";
+  const isMod = populationTier === "Moderate Risk";
+  let tierBadgeColor = "bg-emerald-50 text-emerald-700 border-emerald-200";
+  let tierGradient = "linear-gradient(135deg, #065F46, #047857)";
 
-  // scatter plot patient position
-  const score = analysisResult.final_risk_pct ?? analysisResult.risk_score ?? 50;
-  let px = 150, py = 100;
-  if (tier === 'Low Risk' || tier === 'Healthy Lifestyle Group') {
-    const clampedScore = Math.min(44.9, score);
-    const t = clampedScore / 44.9;
-    px = 70 + t * 20; py = 140 - t * 20;
-  } else if (tier === 'Moderate Risk') {
-    const clampedScore = Math.max(45, Math.min(74.9, score));
-    const t = (clampedScore - 45) / (74.9 - 45);
-    px = 140 + t * 20; py = 110 - t * 20;
-  } else {
-    const clampedScore = Math.max(75, Math.min(100, score));
-    const t = (clampedScore - 75) / (100 - 75);
-    px = 210 + t * 20; py = 75 - t * 20;
+  if (isHigh) {
+    tierBadgeColor = "bg-rose-50 text-rose-700 border-rose-200";
+    tierGradient = "linear-gradient(135deg, #991B1B, #B91C1C)";
+  } else if (isMod) {
+    tierBadgeColor = "bg-amber-50 text-amber-700 border-amber-200";
+    tierGradient = "linear-gradient(135deg, #92400E, #B45309)";
   }
-  const lowPts  = generatePoints(80,  130, 30, 1234);
-  const modPts  = generatePoints(150, 100, 30, 5678);
-  const highPts = generatePoints(220,  65, 30, 9012);
+
+  const traits = traitMap[populationTier] || traitMap['Low Risk'];
 
   const content = (
-    <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
+    <div className="space-y-6">
 
-      {/* LEFT: Group banner + scatter plot */}
-      <div className="lg:col-span-5 space-y-6">
-
-        {/* Group banner card */}
-        <div
-          className="relative overflow-hidden text-white rounded-3xl p-7 shadow-md"
-          style={{ background: color.gradient }}
-        >
-          <div className="absolute inset-0 opacity-[0.06] bg-[radial-gradient(ellipse_at_top_right,white,transparent)]" />
-          <span className="text-[10px] font-black uppercase tracking-widest text-white/60">Matched Group Segment</span>
-          <h2 className="text-2xl font-black mt-2">{groupName(tier)}</h2>
-          <p className="text-xs text-white/80 leading-relaxed mt-3 max-w-[240px]">
-            {tier === 'High Risk'
-              ? 'Patients in this group generally have higher blood pressure, elevated cholesterol, and a higher BMI than average.'
-              : tier === 'Moderate Risk'
-              ? 'Patients in this group show borderline cardiac markers and need preventive lifestyle improvements.'
-              : 'Patients in this group maintain healthy blood pressure, weight, and active daily habits.'}
-          </p>
-
-          {/* Decorative avatar silhouettes */}
-          <div className="absolute right-4 bottom-4 opacity-20">
-            <Users className="w-20 h-20" />
-          </div>
-        </div>
-
-        {/* Scatter Plot */}
-        <div className="bg-white border border-slate-100 rounded-3xl p-6 shadow-sm space-y-4">
-          <div>
-            <h3 className="text-sm font-bold text-slate-800">Group Visualization</h3>
-            <p className="text-[10px] text-slate-400 font-medium mt-0.5">Showing where you fall among similar patients</p>
-          </div>
-
-          <div className="border border-slate-100 bg-[#F8FAFC] rounded-2xl p-3">
-            {/* Axis labels */}
-            <div className="flex justify-between text-[9px] text-slate-400 font-semibold px-2 mb-1">
-              <span>-3</span><span>0</span><span>3</span>
-            </div>
-
-            <svg width="100%" viewBox="0 0 300 200" className="overflow-visible">
-              {/* Grid */}
-              {[40,80,120,160,200,240,280].map(x => (
-                <line key={`vg${x}`} x1={x} y1="10" x2={x} y2="190" stroke="#E2E8F0" strokeWidth="0.5" />
-              ))}
-              {[10,55,100,145,190].map(y => (
-                <line key={`hg${y}`} x1="20" y1={y} x2="280" y2={y} stroke="#E2E8F0" strokeWidth="0.5" />
-              ))}
-
-              {/* Cluster clouds */}
-              {lowPts.map((p, i)  => <circle key={`l${i}`}  cx={p.x} cy={p.y} r="4" fill="#22C55E" opacity="0.55" />)}
-              {modPts.map((p, i)  => <circle key={`m${i}`}  cx={p.x} cy={p.y} r="4" fill="#3B82F6" opacity="0.55" />)}
-              {highPts.map((p, i) => <circle key={`h${i}`}  cx={p.x} cy={p.y} r="4" fill="#EF4444" opacity="0.55" />)}
-
-              {/* Patient dot */}
-              <circle cx={px} cy={py} r="7" fill="white" stroke="#1E293B" strokeWidth="2" />
-              <text x={px} y={py + 1} textAnchor="middle" dominantBaseline="middle" fontSize="7" fill="#1E293B" fontWeight="bold">★</text>
-            </svg>
-
-            {/* Legend */}
-            <div className="flex flex-wrap gap-3 justify-center mt-3 text-[9px] font-bold text-slate-500 uppercase">
-              <span className="flex items-center gap-1"><span className="w-2.5 h-2.5 rounded-full bg-emerald-500 inline-block" />Low Risk</span>
-              <span className="flex items-center gap-1"><span className="w-2.5 h-2.5 rounded-full bg-blue-500 inline-block" />Moderate Risk</span>
-              <span className="flex items-center gap-1"><span className="w-2.5 h-2.5 rounded-full bg-red-500 inline-block" />High Risk</span>
-              <span className="flex items-center gap-1"><span className="text-base leading-none">★</span>Your Position</span>
-            </div>
-          </div>
+      {/* ── EXPLANATORY DISCLAIMER LINE ─────────────────────────────────── */}
+      <div className="p-4 bg-blue-50/70 border border-blue-200/80 rounded-2xl flex items-start gap-3 text-xs text-blue-900 font-semibold leading-relaxed">
+        <Info className="w-4 h-4 text-blue-600 shrink-0 mt-0.5" />
+        <div>
+          This shows how this patient compares to broader population groups (Unsupervised K-Means & GMM Clustering) and may differ from the primary risk score above.
         </div>
       </div>
 
-      {/* MIDDLE: Stats + Why You Belong */}
-      <div className="lg:col-span-4 space-y-6">
+      <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
 
-        {/* Group Summary stats */}
-        <div className="bg-white border border-slate-100 rounded-3xl p-6 shadow-sm space-y-4">
-          <h3 className="text-sm font-bold text-slate-800">Group Summary</h3>
-          <div className="space-y-3">
-            {[
-              { icon: <Users className="w-4 h-4 text-blue-500" />,    label: 'Total Patients in Group', val: totalPts.toLocaleString() },
-              { icon: <Activity className="w-4 h-4 text-purple-500" />, label: 'Average Age',           val: `${Math.round(centroid.age || 50)} years` },
-              { icon: <Dumbbell className="w-4 h-4 text-orange-500" />, label: 'Average BMI',           val: `${centroid.BMI ?? '—'}` },
-              { icon: <Heart className="w-4 h-4 text-red-500" />,      label: 'Average Blood Pressure', val: `${Math.round(centroid.ap_hi || 120)} / ${Math.round(centroid.ap_lo || 80)} mmHg` },
-              { icon: <Droplets className="w-4 h-4 text-teal-500" />, label: 'Average Cholesterol',    val: centroid.cholesterol === 1 ? 'Normal' : 'Elevated' },
-            ].map((s, i) => (
-              <div key={i} className="flex items-center justify-between py-2 border-b border-slate-100 last:border-0">
-                <div className="flex items-center gap-2.5">
-                  {s.icon}
-                  <span className="text-xs text-slate-600 font-medium">{s.label}</span>
-                </div>
-                <span className="text-xs font-black text-slate-900">{s.val}</span>
+        {/* ── LEFT COLUMN: COHORT BANNER + GMM CONFIDENCE BREAKDOWN ───────── */}
+        <div className="lg:col-span-6 space-y-6">
+
+          {/* Matched Cohort Card */}
+          <div
+            className="relative overflow-hidden text-white rounded-3xl p-6 shadow-xs space-y-3"
+            style={{ background: tierGradient }}
+          >
+            <div className="flex items-center justify-between">
+              <span className="text-[10px] font-black uppercase tracking-widest text-white/70">
+                Unsupervised Population Cohort
+              </span>
+              <Users className="w-5 h-5 text-white/80" />
+            </div>
+            <h2 className="text-xl font-extrabold tracking-tight">
+              Matched Cohort: {populationTier}
+            </h2>
+            <p className="text-xs text-white/90 leading-relaxed font-medium">
+              Based on overall feature similarity, this patient clusters closest to the {populationTier} population benchmark.
+            </p>
+          </div>
+
+          {/* GMM Confidence Breakdown Card */}
+          <div className="bg-white border border-[#DDE4EE] rounded-3xl p-6 shadow-xs space-y-4">
+            <div className="flex items-center justify-between pb-3 border-b border-slate-100">
+              <h3 className="text-xs font-black uppercase tracking-wider text-slate-800">
+                GMM Cluster Membership Confidence
+              </h3>
+              <span className="text-[10px] font-bold text-slate-500">Soft Assignment</span>
+            </div>
+
+            <p className="text-xs text-slate-600 font-medium leading-relaxed">
+              Gaussian Mixture Model (GMM) probability distribution across population clusters:
+            </p>
+
+            {/* Stacked Bar */}
+            <div className="w-full h-4 rounded-full overflow-hidden flex bg-slate-100 p-0.5 border border-slate-200">
+              <div
+                style={{ width: `${lowPct}%` }}
+                className="bg-emerald-500 h-full transition-all duration-500 first:rounded-l-full last:rounded-r-full"
+                title={`Low Risk: ${lowPct}%`}
+              />
+              <div
+                style={{ width: `${modPct}%` }}
+                className="bg-amber-500 h-full transition-all duration-500 first:rounded-l-full last:rounded-r-full"
+                title={`Moderate Risk: ${modPct}%`}
+              />
+              <div
+                style={{ width: `${highPct}%` }}
+                className="bg-rose-500 h-full transition-all duration-500 first:rounded-l-full last:rounded-r-full"
+                title={`High Risk: ${highPct}%`}
+              />
+            </div>
+
+            {/* Three Percentage Badges */}
+            <div className="grid grid-cols-3 gap-2 pt-1 text-center">
+              <div className="p-2.5 bg-emerald-50 border border-emerald-200 rounded-xl space-y-0.5">
+                <span className="block text-[9px] font-black text-emerald-800 uppercase">Low Risk</span>
+                <span className="block text-sm font-extrabold text-emerald-700">{lowPct}%</span>
               </div>
-            ))}
+              <div className="p-2.5 bg-amber-50 border border-amber-200 rounded-xl space-y-0.5">
+                <span className="block text-[9px] font-black text-amber-800 uppercase">Moderate Risk</span>
+                <span className="block text-sm font-extrabold text-amber-700">{modPct}%</span>
+              </div>
+              <div className="p-2.5 bg-rose-50 border border-rose-200 rounded-xl space-y-0.5">
+                <span className="block text-[9px] font-black text-rose-800 uppercase">High Risk</span>
+                <span className="block text-sm font-extrabold text-rose-700">{highPct}%</span>
+              </div>
+            </div>
+
+            {/* Borderline Note */}
+            {isBorderline && (
+              <div className="p-3 bg-amber-50 border border-amber-200 text-amber-900 text-xs font-bold rounded-2xl flex items-center gap-2.5">
+                <AlertCircle className="w-4 h-4 text-amber-600 shrink-0" />
+                <span>This patient's profile is borderline between two risk groups.</span>
+              </div>
+            )}
           </div>
+
         </div>
 
-        {/* Why You Belong Here */}
-        <div className="bg-white border border-slate-100 rounded-3xl p-6 shadow-sm space-y-4">
-          <div>
-            <h3 className="text-sm font-bold text-slate-800">Why You Belong to This Group</h3>
-            <p className="text-[10px] text-slate-400 mt-0.5">Your values compared to the group average</p>
+        {/* ── RIGHT COLUMN: COHORT CHARACTERISTICS + BIOMETRIC DATA ──────── */}
+        <div className="lg:col-span-6 space-y-6">
+
+          {/* Cohort Characteristics */}
+          <div className="bg-white border border-[#DDE4EE] rounded-3xl p-6 shadow-xs space-y-4">
+            <h3 className="text-xs font-black uppercase tracking-wider text-slate-800">
+              Matched Cohort Characteristics
+            </h3>
+            <ul className="space-y-2.5">
+              {traits.map((trait, idx) => (
+                <li key={idx} className="flex items-start gap-2.5 text-xs text-slate-700 font-semibold">
+                  <span className="w-4 h-4 rounded-full bg-[#EEF3FF] text-[#3B7CF4] border border-[#C7D7F8] flex items-center justify-center shrink-0 mt-0.5">
+                    <Check className="w-2.5 h-2.5 stroke-[3]" />
+                  </span>
+                  {trait}
+                </li>
+              ))}
+            </ul>
           </div>
 
-          <div className="overflow-x-auto">
-            <table className="w-full text-xs">
-              <thead>
-                <tr className="border-b border-slate-100">
-                  <th className="text-left text-slate-400 font-bold pb-2.5">Marker</th>
-                  <th className="text-right text-slate-400 font-bold pb-2.5">Your Value</th>
-                  <th className="text-right text-slate-400 font-bold pb-2.5">Group Avg</th>
-                </tr>
-              </thead>
-              <tbody>
-                {compareRows.map((r, i) => (
-                  <tr key={i} className="border-b border-slate-50 last:border-0">
-                    <td className="py-2.5 text-slate-600 font-medium">{r.marker}</td>
-                    <td className="py-2.5 text-right font-black text-slate-900">{r.yours}</td>
-                    <td className="py-2.5 text-right font-semibold text-slate-500">{r.group}</td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-          <p className="text-[9px] text-slate-400">Values are compared against the average of your matched group.</p>
-        </div>
-      </div>
-
-      {/* RIGHT: Group Characteristics + Feature Bars */}
-      <div className="lg:col-span-3 space-y-6">
-
-        {/* Group Characteristics */}
-        <div className="bg-white border border-slate-100 rounded-3xl p-6 shadow-sm space-y-4">
-          <div>
-            <h3 className="text-sm font-bold text-slate-800">Group Characteristics</h3>
-            <p className="text-[10px] text-slate-400 mt-0.5">Common patterns in this group</p>
-          </div>
-          <ul className="space-y-2.5">
-            {traits.map((t, i) => (
-              <li key={i} className="flex items-start gap-2.5 text-xs text-slate-700 font-medium">
-                <span
-                  className="w-5 h-5 rounded-full text-white flex items-center justify-center shrink-0 mt-0.5"
-                  style={{ backgroundColor: color.bgHex }}
-                >
-                  <Check className="w-3 h-3" />
+          {/* Patient Biometrics Comparison */}
+          <div className="bg-white border border-[#DDE4EE] rounded-3xl p-6 shadow-xs space-y-4">
+            <h3 className="text-xs font-black uppercase tracking-wider text-slate-800">
+              Patient Biometrics Summary
+            </h3>
+            <div className="grid grid-cols-2 gap-3 text-xs">
+              <div className="p-3 bg-[#F8FAFD] border border-[#EDF2FA] rounded-xl space-y-1">
+                <span className="block text-[9px] font-black text-slate-400 uppercase">Age / Gender</span>
+                <span className="block font-extrabold text-slate-800">
+                  {formData.age || '—'} yrs · {formData.gender === '1' ? 'Male' : 'Female'}
                 </span>
-                {t}
-              </li>
-            ))}
-          </ul>
+              </div>
+              <div className="p-3 bg-[#F8FAFD] border border-[#EDF2FA] rounded-xl space-y-1">
+                <span className="block text-[9px] font-black text-slate-400 uppercase">BMI</span>
+                <span className="block font-extrabold text-slate-800">{bmi || '—'}</span>
+              </div>
+              <div className="p-3 bg-[#F8FAFD] border border-[#EDF2FA] rounded-xl space-y-1">
+                <span className="block text-[9px] font-black text-slate-400 uppercase">Blood Pressure</span>
+                <span className="block font-extrabold text-slate-800">
+                  {formData.ap_hi || '—'} / {formData.ap_lo || '—'} mmHg
+                </span>
+              </div>
+              <div className="p-3 bg-[#F8FAFD] border border-[#EDF2FA] rounded-xl space-y-1">
+                <span className="block text-[9px] font-black text-slate-400 uppercase">Cholesterol</span>
+                <span className="block font-extrabold text-slate-800">
+                  {formData.cholesterol === '1' ? 'Normal' : formData.cholesterol === '2' ? 'Above Normal' : 'Well Above Normal'}
+                </span>
+              </div>
+            </div>
+          </div>
+
         </div>
 
-        {/* Feature Influence bars */}
-        <div className="bg-white border border-slate-100 rounded-3xl p-6 shadow-sm space-y-4">
-          <div>
-            <h3 className="text-sm font-bold text-slate-800">Top Defining Factors</h3>
-            <p className="text-[10px] text-slate-400 mt-0.5">Relative influence on group assignment</p>
-          </div>
-          <div className="space-y-3">
-            {features.map((f, i) => (
-              <div key={i}>
-                <div className="flex justify-between items-center mb-1">
-                  <span className="text-xs text-slate-700 font-medium">{f.name}</span>
-                  <span className="text-[10px] font-black text-slate-500">{f.val.toFixed(2)}</span>
-                </div>
-                <div className="w-full bg-slate-100 rounded-full h-2">
-                  <div
-                    className="h-2 rounded-full transition-all duration-700"
-                    style={{
-                      width: `${Math.max(4, Math.round((f.val / maxVal) * 100))}%`,
-                      background: 'linear-gradient(90deg,#FB7185,#E11D48)'
-                    }}
-                  />
-                </div>
-              </div>
-            ))}
-          </div>
-          <p className="text-[9px] text-slate-400">Higher values mean more influence on group assignment.</p>
-        </div>
       </div>
+
     </div>
   );
 
   if (isEmbedded) {
-    return (
-      <div className="p-6 space-y-6">
-        {content}
-        {/* Lifestyle Recommendations row */}
-        <div className="bg-white border border-slate-100 rounded-3xl p-6 shadow-sm space-y-5">
-          <h3 className="text-sm font-bold text-slate-800">Lifestyle Recommendations for Your Group</h3>
-          <div className="flex flex-wrap gap-4 justify-start">
-            {lifestyleTips.map((tip, i) => (
-              <div key={i} className="flex flex-col items-center gap-2.5 w-28 text-center">
-                <div className="w-14 h-14 rounded-2xl bg-slate-50 border border-slate-100 flex items-center justify-center shadow-xs">
-                  {tip.icon}
-                </div>
-                <span className="text-[10px] font-bold text-slate-600 leading-tight">{tip.label}</span>
-              </div>
-            ))}
-          </div>
-        </div>
-      </div>
-    );
+    return <div className="p-6">{content}</div>;
   }
 
   return (
     <div className="min-h-screen font-sans p-4 md:p-8 space-y-8" style={{ background: '#E8ECF2', color: '#1A2440' }}>
-
-      {/* ── Page Header ─────────────────────────────────────────────── */}
-      <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 border-b border-slate-200 pb-5">
+      <div className="flex justify-between items-center border-b border-slate-200 pb-5">
         <div>
           <h1 className="text-2xl font-extrabold tracking-tight text-slate-900">
-            Population Comparison
+            Population Similarity Cohorts
           </h1>
-          <p className="text-sm text-slate-500 mt-0.5">
-            Discover the patient group you belong to based on similarity with others.
+          <p className="text-xs text-slate-500 mt-1">
+            Unsupervised clustering comparison against broader population datasets.
           </p>
         </div>
-
-        {/* Cluster badge */}
-        <div
-          className="flex items-center gap-3 bg-white rounded-2xl px-5 py-3 shadow-sm shrink-0"
-          style={{ border: `1.5px solid ${color.borderHex}` }}
-        >
-          <div
-            className="w-10 h-10 rounded-xl flex items-center justify-center text-white font-black text-sm"
-            style={{ backgroundColor: color.bgHex }}
-          >
-            {groupLabel(tier)}
-          </div>
-          <div>
-            <span className="block text-[10px] font-bold text-slate-400 uppercase tracking-wider">Population Comparison</span>
-            <span className="block text-sm font-bold" style={{ color: color.textHex }}>{groupName(tier)}</span>
-          </div>
-        </div>
       </div>
-
       {content}
-
-      {/* ── Lifestyle Recommendations row ──────────────────────────── */}
-      <div className="bg-white border border-slate-100 rounded-3xl p-6 shadow-sm space-y-5">
-        <h3 className="text-sm font-bold text-slate-800">Lifestyle Recommendations for Your Group</h3>
-        <div className="flex flex-wrap gap-4 justify-start">
-          {lifestyleTips.map((tip, i) => (
-            <div key={i} className="flex flex-col items-center gap-2.5 w-28 text-center">
-              <div className="w-14 h-14 rounded-2xl bg-slate-50 border border-slate-100 flex items-center justify-center shadow-xs">
-                {tip.icon}
-              </div>
-              <span className="text-[10px] font-bold text-slate-600 leading-tight">{tip.label}</span>
-            </div>
-          ))}
-        </div>
-      </div>
     </div>
   );
 }

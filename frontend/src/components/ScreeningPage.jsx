@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import api, { submitScreening } from '../api/api';
+import { submitScreening } from '../api/screenApi';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
   Activity,
@@ -149,13 +149,48 @@ export default function ScreeningPage({ onBackToHome }) {
     setAnalysisResult(null);
   };
 
+  const validateForm = () => {
+    const age = parseFloat(formData.age);
+    const height = parseFloat(formData.height);
+    const weight = parseFloat(formData.weight);
+    const ap_hi = parseInt(formData.ap_hi, 10);
+    const ap_lo = parseInt(formData.ap_lo, 10);
+
+    if (isNaN(age) || age < 1 || age > 120) {
+      return 'Please enter a valid age between 1 and 120 years.';
+    }
+    if (isNaN(height) || height < 50 || height > 250) {
+      return 'Please enter a valid height between 50 and 250 cm.';
+    }
+    if (isNaN(weight) || weight < 10 || weight > 300) {
+      return 'Please enter a valid weight between 10 and 300 kg.';
+    }
+    if (isNaN(ap_hi) || ap_hi <= 0) {
+      return 'Please enter a valid positive systolic blood pressure (ap_hi).';
+    }
+    if (isNaN(ap_lo) || ap_lo <= 0) {
+      return 'Please enter a valid positive diastolic blood pressure (ap_lo).';
+    }
+    if (ap_hi <= ap_lo) {
+      return 'Systolic blood pressure (ap_hi) must be higher than diastolic blood pressure (ap_lo).';
+    }
+    return null;
+  };
+
   const handleRunScreening = async (e) => {
     if (e) e.preventDefault();
+    setErrorMessage(null);
+
+    const validationError = validateForm();
+    if (validationError) {
+      setErrorMessage(validationError);
+      return;
+    }
+
     setAnalyzing(true);
     setLoadingProgress(0);
     setLoadingCountdown(5);
     setLoadingStep(0);
-    setErrorMessage(null);
 
     // Slowly advance the progress bar to 95% and keep it there until the request resolves
     let progress = 0;
@@ -211,13 +246,13 @@ export default function ScreeningPage({ onBackToHome }) {
         await new Promise((resolve) => setTimeout(resolve, 300));
         setAnalysisResult(result.data);
       } else {
-        setErrorMessage(result.error);
+        setErrorMessage(result.error || "We couldn't process this screening — please try again.");
         setAnalysisResult(null);
       }
     } catch (error) {
       clearInterval(progressInterval);
       console.error("Screening execution error:", error);
-      setErrorMessage("An unexpected error occurred. Please verify your connection to the screening backend.");
+      setErrorMessage("We couldn't process this screening — please try again.");
       setAnalysisResult(null);
     } finally {
       setAnalyzing(false);
