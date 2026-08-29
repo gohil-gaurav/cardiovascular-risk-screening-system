@@ -33,6 +33,19 @@ class ScreeningReport(BaseModel):
     suggested_next_step: str
     clinician_note: str
     group_context: str
+    cohort_traits: list[str] = []
+    value_explanations: dict[str, str] = {}
+    cluster_explanation: str = ""
+    risk_threshold_explanation: str = ""
+    provider_used: str = "fallback"
     fallback_used: bool = False
     screening_id: int | None = None
+
+    # PyTorch MLP Deep Learning SHAP & Risk metrics
+    mlp_risk_score: float | None = None
+    mlp_risk_level: str | None = None
+    mlp_prediction: int | None = None
+    mlp_primary_drivers: list | None = None
+    mlp_protective_factors: list | None = None
+    mlp_shap_values: list | None = None
 

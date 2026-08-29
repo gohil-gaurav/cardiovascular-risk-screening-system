@@ -43,6 +43,12 @@ export default function NeuralDiagnosticProfile({
   top_factors: propTopFactors,
   secondary_model_comparison: propSecondaryComparison,
   valueExplanations = {},
+  mlp_primary_drivers: propMlpPrimaryDrivers,
+  mlp_protective_factors: propMlpProtectiveFactors,
+  mlp_shap_values: propMlpShapValues,
+  mlp_risk_score: propMlpRiskScore,
+  mlp_risk_level: propMlpRiskLevel,
+  mlp_prediction: propMlpPrediction,
 }) {
   const riskTier = parentRiskTier || analysisResult.risk_tier || "Low Risk";
 
@@ -53,29 +59,31 @@ export default function NeuralDiagnosticProfile({
   const isHighRisk = riskTier === "High Risk";
   const isModRisk = riskTier === "Moderate Risk";
 
-  // Resolve top_factors (Primary XGBoost classifier SHAP factors)
-  const rawTopFactors = propTopFactors || analysisResult.top_factors || [];
-  
-  // Format top_factors into standardized shape { feature, label, value, impact }
-  const topFactors = rawTopFactors.map((tf) => {
-    if (typeof tf === 'object' && tf !== null) {
-      return {
-        feature: tf.feature || tf.factor || 'unknown',
-        label: tf.label || tf.factor || tf.feature || 'Unknown Factor',
-        value: tf.value || tf.contribution || '',
-        impact: (tf.impact || 'moderate').toLowerCase(),
-      };
-    }
-    return {
-      feature: String(tf),
-      label: String(tf),
-      value: '',
-      impact: 'moderate',
-    };
-  });
-
   // Resolve secondary model comparison (PyTorch MLP)
   const secondaryModel = propSecondaryComparison || analysisResult.secondary_model_comparison || null;
+
+  const mlpPrimaryDrivers = propMlpPrimaryDrivers || 
+    analysisResult.mlp_primary_drivers || []
+  const mlpProtectiveFactors = propMlpProtectiveFactors || 
+    analysisResult.mlp_protective_factors || []
+  const mlpShapValues = propMlpShapValues || 
+    analysisResult.mlp_shap_values || []
+  const mlpRiskScore = propMlpRiskScore ?? 
+    analysisResult.mlp_risk_score ?? null
+  const mlpRiskLevel = propMlpRiskLevel || 
+    analysisResult.mlp_risk_level || null
+  const mlpPrediction = propMlpPrediction ?? 
+    analysisResult.mlp_prediction ?? null
+
+  const mlpFactorsForDisplay = mlpPrimaryDrivers.map((driver) => ({
+    feature: driver.factor,
+    label: driver.factor,
+    value: driver.contribution,
+    impact: driver.importance_pct >= 50 ? 'high' 
+      : driver.importance_pct >= 20 ? 'moderate' 
+      : 'low',
+    importance_pct: driver.importance_pct,
+  }))
 
   // Impact helper for primary SHAP bars
   const getImpactStyles = (impact) => {
@@ -143,6 +151,47 @@ export default function NeuralDiagnosticProfile({
   const content = (
     <div className="space-y-6">
 
+      {(mlpRiskScore !== null || mlpRiskLevel) && (
+        <div className="grid grid-cols-3 gap-3 mb-6">
+          <div className="bg-[#F8FAFD] border border-[#EDF2FA] rounded-2xl p-4 text-center">
+            <span className="block text-[9px] font-black text-[#9DAABB] uppercase tracking-wider mb-1">
+              MLP Risk Score
+            </span>
+            <span className={`block text-2xl font-black ${
+              mlpRiskScore >= 75 ? 'text-rose-600' 
+              : mlpRiskScore >= 45 ? 'text-amber-600' 
+              : 'text-emerald-600'
+            }`}>
+              {mlpRiskScore !== null ? `${Math.round(mlpRiskScore)}%` : '—'}
+            </span>
+          </div>
+          <div className="bg-[#F8FAFD] border border-[#EDF2FA] rounded-2xl p-4 text-center">
+            <span className="block text-[9px] font-black text-[#9DAABB] uppercase tracking-wider mb-1">
+              MLP Risk Level
+            </span>
+            <span className={`block text-sm font-black ${
+              mlpRiskLevel === 'High Risk' ? 'text-rose-600'
+              : mlpRiskLevel === 'Moderate Risk' ? 'text-amber-600'
+              : 'text-emerald-600'
+            }`}>
+              {mlpRiskLevel || '—'}
+            </span>
+          </div>
+          <div className="bg-[#F8FAFD] border border-[#EDF2FA] rounded-2xl p-4 text-center">
+            <span className="block text-[9px] font-black text-[#9DAABB] uppercase tracking-wider mb-1">
+              MLP Prediction
+            </span>
+            <span className={`block text-sm font-black ${
+              mlpPrediction === 1 ? 'text-rose-600' : 'text-emerald-600'
+            }`}>
+              {mlpPrediction === 1 ? 'Disease Detected' 
+               : mlpPrediction === 0 ? 'No Disease' 
+               : '—'}
+            </span>
+          </div>
+        </div>
+      )}
+
       {/* ── SECTION 1: PRIMARY SHAP FACTOR BREAKDOWN ─────────────────────── */}
       <div className="bg-white border border-[#DDE4EE] rounded-3xl p-6 shadow-xs space-y-5">
         <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-2 pb-4 border-b border-slate-100">
@@ -152,26 +201,26 @@ export default function NeuralDiagnosticProfile({
                 <BarChart3 className="w-4 h-4" />
               </span>
               <h3 className="text-sm font-extrabold text-[#1A2440]">
-                Key factors from the primary risk assessment
+                Deep Learning Risk Factor Analysis
               </h3>
             </div>
             <p className="text-[11px] text-slate-500 mt-1">
-              Direct feature attribution (SHAP) from the primary XGBoost classifier driving the official risk tier.
+              Feature attribution from PyTorch MLP Neural Network (SHAP DeepExplainer) — independent deep learning analysis.
             </p>
           </div>
           <span className="text-[10px] font-bold uppercase tracking-wider px-3 py-1 rounded-full bg-slate-100 text-slate-600 border border-slate-200">
-            Primary Model
+            Deep Learning Model
           </span>
         </div>
 
         {/* SHAP Factor Bars */}
-        {topFactors.length === 0 ? (
+        {mlpFactorsForDisplay.length === 0 ? (
           <div className="p-6 bg-slate-50 border border-slate-200 rounded-2xl text-center text-xs text-slate-500 font-medium">
             No specific factor drivers available for this screening profile.
           </div>
         ) : (
           <div className="space-y-4">
-            {topFactors.map((factor, idx) => {
+            {mlpFactorsForDisplay.map((factor, idx) => {
               const styles = getImpactStyles(factor.impact);
               const dynamicWidth = factor.importance_pct 
                 ? `${Math.min(factor.importance_pct, 100)}%`
@@ -221,10 +270,37 @@ export default function NeuralDiagnosticProfile({
             })}
           </div>
         )}
+
+        {mlpProtectiveFactors.length > 0 && (
+          <div className="mt-6 pt-6 border-t border-[#EDF2FA]">
+            <h4 className="text-xs font-black text-[#1B2B6B] uppercase tracking-widest mb-4 flex items-center gap-2">
+              <Shield className="w-4 h-4 text-emerald-500" />
+              Deep Learning Protective Factors
+            </h4>
+            <div className="space-y-3">
+              {mlpProtectiveFactors.map((factor, idx) => (
+                <div key={idx} 
+                  className="flex items-center gap-3 p-3 bg-emerald-50/50 border border-emerald-100 rounded-xl">
+                  <div className="w-5 h-5 rounded-full bg-emerald-100 border border-emerald-200 flex items-center justify-center shrink-0">
+                    <Check className="w-3 h-3 text-emerald-600 stroke-[3]" />
+                  </div>
+                  <div className="flex-1">
+                    <span className="block text-xs font-semibold text-[#2C3B4E]">
+                      {factor.factor}
+                    </span>
+                  </div>
+                  <span className="text-xs font-mono text-emerald-600 font-bold shrink-0">
+                    {factor.contribution}
+                  </span>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
       </div>
 
       {/* ── SECTION 2: SECONDARY MODEL REASONING (SEPARATE & COMPARATIVE) ── */}
-      {secondaryModel && (
+      {(analysisResult.risk_score !== undefined || secondaryModel) && (
         <div className="bg-[#FAFBFD] border border-slate-200 rounded-3xl p-6 space-y-4">
           <div className="flex items-center justify-between pb-3 border-b border-slate-200">
             <div className="flex items-center gap-2">
@@ -233,37 +309,37 @@ export default function NeuralDiagnosticProfile({
               </span>
               <div>
                 <h4 className="text-xs font-black uppercase tracking-wider text-slate-700">
-                  Secondary model's reasoning (for comparison)
+                  XGBoost Primary Classifier (for comparison)
                 </h4>
                 <p className="text-[10px] text-slate-500">
-                  Deep Learning PyTorch MLP output — strictly for comparative clinical reference.
+                  XGBoost prediction — the official primary risk score used for the patient-facing report.
                 </p>
               </div>
             </div>
-            <span className="text-[9px] font-black uppercase px-2.5 py-1 rounded-lg bg-slate-200 text-slate-600">
-              Comparative Reference
+            <span className="text-[9px] font-black uppercase px-2.5 py-1 rounded-lg bg-blue-100 text-blue-700">
+              Primary Classifier
             </span>
           </div>
 
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 text-xs">
             <div className="bg-white border border-slate-200 rounded-xl p-3 space-y-1">
-              <span className="block text-[9px] font-black text-slate-400 uppercase">PyTorch MLP Risk</span>
+              <span className="block text-[9px] font-black text-slate-400 uppercase">XGBoost Risk Score</span>
               <span className="block text-base font-extrabold text-slate-800">
-                {secondaryModel.mlp_risk_score !== undefined && secondaryModel.mlp_risk_score !== null
-                  ? `${secondaryModel.mlp_risk_score}%`
+                {analysisResult.risk_score !== undefined && analysisResult.risk_score !== null
+                  ? `${Math.round(analysisResult.risk_score)}%`
                   : 'N/A'}
               </span>
             </div>
             <div className="bg-white border border-slate-200 rounded-xl p-3 space-y-1">
-              <span className="block text-[9px] font-black text-slate-400 uppercase">MLP Risk Level</span>
+              <span className="block text-[9px] font-black text-slate-400 uppercase">XGBoost Risk Level</span>
               <span className="block text-sm font-bold text-slate-800">
-                {secondaryModel.mlp_risk_level || 'N/A'}
+                {analysisResult.risk_level || 'N/A'}
               </span>
             </div>
-            <div className="bg-white border border-slate-200 rounded-xl p-3 space-y-1">
-              <span className="block text-[9px] font-black text-slate-400 uppercase">MLP Prediction</span>
+            <div className="bg-[#FFFFFF] border border-slate-200 rounded-xl p-3 space-y-1">
+              <span className="block text-[9px] font-black text-slate-400 uppercase">XGBoost Prediction</span>
               <span className="block text-sm font-bold text-slate-800">
-                {secondaryModel.mlp_prediction === 1 ? 'Disease Detected' : secondaryModel.mlp_prediction === 0 ? 'No Disease' : 'N/A'}
+                {analysisResult.prediction === 1 ? 'Disease Detected' : analysisResult.prediction === 0 ? 'No Disease' : 'N/A'}
               </span>
             </div>
           </div>

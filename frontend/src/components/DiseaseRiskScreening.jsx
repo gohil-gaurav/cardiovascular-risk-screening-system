@@ -394,6 +394,7 @@ export default function DiseaseRiskScreening({
                 clustering_confidence={analysisResult.clustering_confidence}
                 clusterExplanation={clusterExplanation}
                 valueExplanations={valueExplanations}
+                cohort_traits={analysisResult.cohort_traits}
               />
             ) : (
               <NeuralDiagnosticProfile 
@@ -407,6 +408,12 @@ export default function DiseaseRiskScreening({
                 top_factors={analysisResult.top_factors}
                 secondary_model_comparison={analysisResult.secondary_model_comparison}
                 valueExplanations={valueExplanations}
+                mlp_primary_drivers={analysisResult.mlp_primary_drivers}
+                mlp_protective_factors={analysisResult.mlp_protective_factors}
+                mlp_shap_values={analysisResult.mlp_shap_values}
+                mlp_risk_score={analysisResult.mlp_risk_score}
+                mlp_risk_level={analysisResult.mlp_risk_level}
+                mlp_prediction={analysisResult.mlp_prediction}
               />
             )}
           </div>

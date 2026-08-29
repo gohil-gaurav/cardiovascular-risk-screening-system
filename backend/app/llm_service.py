@@ -68,7 +68,14 @@ Return exactly this JSON structure:
   
   "cluster_explanation": "1-2 sentences explaining why the patient was placed in their risk group and what that group typically looks like based on the actual risk tier provided",
   
-  "risk_threshold_explanation": "1 sentence explaining what the risk percentage means in simple terms for example: a score of 72 percent means roughly 7 in 10 patients with similar readings develop cardiovascular disease without medical support"
+  "risk_threshold_explanation": "1 sentence explaining what the risk percentage means in simple terms for example: a score of 72 percent means roughly 7 in 10 patients with similar readings develop cardiovascular disease without medical support",
+
+  "cohort_traits": [
+    "bullet point 1 describing a key health/lifestyle trait of this matched cohort",
+    "bullet point 2 describing another key trait",
+    "bullet point 3 describing another key trait",
+    "bullet point 4 describing another key trait"
+  ]
 }"""
 
 FALLBACK_RESPONSE = {
@@ -97,6 +104,12 @@ FALLBACK_RESPONSE = {
         "Your score reflects your cardiovascular risk "
         "level based on your health indicators."
     ),
+    "cohort_traits": [
+        "Matching biological strain across blood pressure parameters",
+        "Standard metabolic indicator profiles (cholesterol/glucose)",
+        "Calculated body mass index relative to cohort baseline",
+        "Reported physical activity and daily lifestyle profile",
+    ],
     "fallback_used": True,
 }
 
@@ -106,7 +119,8 @@ REQUIRED_KEYS = {
     "suggested_next_step",
     "value_explanations",
     "cluster_explanation",
-    "risk_threshold_explanation"
+    "risk_threshold_explanation",
+    "cohort_traits",
 }
 
 
@@ -202,6 +216,8 @@ Important context for value_explanations:
 - cholesterol=1 means Normal, 2 means Above normal, 3 means Well above normal
 - gluc=1 means Normal, 2 means Above normal, 3 means Well above normal
 
+Also generate 3-4 concise bullet points for cohort_traits summarizing key physical, biological, and lifestyle traits of this patient's matched cohort based on their actual readings.
+
 Explain this result to the patient following the JSON 
 format and rules given in the system prompt."""
 
@@ -262,14 +278,22 @@ def _parse_llm_json(raw_text: str) -> dict[str, Any] | None:
     except json.JSONDecodeError:
         return None
 
-    if not REQUIRED_KEYS.issubset(parsed.keys()):
+    if not isinstance(parsed, dict):
+        return None
+
+    # Essential fields required for a valid summary
+    core_keys = {"patient_summary"}
+    if not core_keys.issubset(parsed.keys()):
         logger.warning(
-            "Missing keys in LLM response. "
-            "Got: %s, Required: %s",
-            set(parsed.keys()),
-            REQUIRED_KEYS
+            "Missing core key 'patient_summary' in LLM response. Got: %s",
+            set(parsed.keys())
         )
         return None
+
+    # Fill any missing optional fields from FALLBACK_RESPONSE so LLM output is never discarded unnecessarily
+    for key in REQUIRED_KEYS:
+        if key not in parsed or not parsed[key]:
+            parsed[key] = FALLBACK_RESPONSE.get(key)
 
     return parsed
 
@@ -367,6 +391,9 @@ def generate_patient_report(
         ),
         "risk_threshold_explanation": explanation.get(
             "risk_threshold_explanation", ""
+        ),
+        "cohort_traits": explanation.get(
+            "cohort_traits", []
         ),
         "provider_used": explanation.get(
             "provider_used", "fallback"

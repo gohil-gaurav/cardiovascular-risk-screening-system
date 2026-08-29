@@ -41,6 +41,7 @@ export default function PatientSimilarityCohorts({
   clustering_confidence: propClusteringConfidence,
   clusterExplanation = "",
   valueExplanations = {},
+  cohort_traits: propCohortTraits,
 }) {
   // Extract population comparison tier
   const populationTier =
@@ -98,7 +99,11 @@ export default function PatientSimilarityCohorts({
     tierGradient = "linear-gradient(135deg, #92400E, #B45309)";
   }
 
-  const traits = traitMap[populationTier] || traitMap['Low Risk'];
+  // Dynamic LLM Cohort Traits with hardcoded traitMap fallback
+  const rawCohortTraits = propCohortTraits || analysisResult.cohort_traits;
+  const traits = (Array.isArray(rawCohortTraits) && rawCohortTraits.length > 0)
+    ? rawCohortTraits
+    : (traitMap[populationTier] || traitMap['Low Risk']);
 
   const content = (
     <div className="space-y-6">
