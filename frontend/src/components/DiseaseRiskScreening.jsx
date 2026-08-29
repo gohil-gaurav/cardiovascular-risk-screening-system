@@ -54,6 +54,10 @@ export default function DiseaseRiskScreening({
   const clinicianNote = analysisResult.clinician_note || "";
   const groupContext = analysisResult.group_context || "";
   const fallbackUsed = analysisResult.fallback_used ?? false;
+  const valueExplanations = analysisResult.value_explanations || {};
+  const clusterExplanation = analysisResult.cluster_explanation || "";
+  const riskThresholdExplanation = analysisResult.risk_threshold_explanation || "";
+  const providerUsed = analysisResult.provider_used || "";
   const populationTier = analysisResult.population_comparison_tier || "Low Risk";
 
   // Runtime consistency check for primary risk tier
@@ -160,6 +164,14 @@ export default function DiseaseRiskScreening({
                 {riskTier}
               </div>
 
+              {riskThresholdExplanation && (
+                <div className="mt-3 px-4 py-2.5 bg-[#EEF3FF] border border-[#C7D7F8] rounded-2xl text-center">
+                  <p className="text-[11px] text-[#1B2B6B] font-semibold leading-relaxed">
+                    {riskThresholdExplanation}
+                  </p>
+                </div>
+              )}
+
             </div>
 
             {/* Right: Summary narrative, Factors and Next Step */}
@@ -180,10 +192,10 @@ export default function DiseaseRiskScreening({
                 <p className="text-sm text-[#4A5F73] leading-relaxed font-semibold">
                   {patientSummary}
                 </p>
-                {groupContext && (
+                {(clusterExplanation || groupContext) && (
                   <div className="pt-2 border-t border-[#E8EEF5] text-xs text-[#5B6E85] font-medium italic flex items-center gap-1.5">
                     <Users className="w-3.5 h-3.5 text-[#3B7CF4] shrink-0" />
-                    <span>{groupContext}</span>
+                    <span>{clusterExplanation || groupContext}</span>
                   </div>
                 )}
               </div>
@@ -216,6 +228,49 @@ export default function DiseaseRiskScreening({
                   <p className="text-xs font-bold text-[#1A2440] leading-relaxed">{suggestedNextStep}</p>
                 </div>
               </div>
+
+              {Object.keys(valueExplanations).length > 0 && (
+                <div className="bg-white border border-[#E6EEF8] rounded-2xl p-5 space-y-3">
+                  <h4 className="text-xs font-black text-[#1B2B6B] uppercase tracking-widest flex items-center gap-1.5">
+                    <Info className="w-4 h-4 text-[#3B7CF4]" />
+                    Your Health Indicators Explained
+                  </h4>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                    {Object.entries(valueExplanations).map(([key, explanation]) => {
+                      const labelMap = {
+                        smoke: "Smoking status",
+                        active: "Physical activity",
+                        cholesterol: "Cholesterol level",
+                        gluc: "Glucose level",
+                        blood_pressure: "Blood pressure",
+                        bmi: "Body mass index"
+                      };
+                      const label = labelMap[key] || key;
+                      return (
+                        <div
+                          key={key}
+                          className="flex items-start gap-2.5 p-3 bg-[#F8FAFD] border border-[#EDF2FA] rounded-xl"
+                        >
+                          <span className="w-1.5 h-1.5 rounded-full bg-[#3B7CF4] shrink-0 mt-1.5" />
+                          <div>
+                            <span className="block text-[9px] font-black text-[#9DAABB] uppercase tracking-wider">
+                              {label}
+                            </span>
+                            <span className="block text-xs font-semibold text-[#4A5F73] mt-0.5">
+                              {explanation}
+                            </span>
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                  {providerUsed && (
+                    <p className="text-[10px] text-[#9DAABB] font-medium text-right">
+                      AI explanation by {providerUsed}
+                    </p>
+                  )}
+                </div>
+              )}
 
             </div>
 
@@ -337,6 +392,8 @@ export default function DiseaseRiskScreening({
                 isEmbedded={true}
                 population_comparison_tier={populationTier}
                 clustering_confidence={analysisResult.clustering_confidence}
+                clusterExplanation={clusterExplanation}
+                valueExplanations={valueExplanations}
               />
             ) : (
               <NeuralDiagnosticProfile 
@@ -349,6 +406,7 @@ export default function DiseaseRiskScreening({
                 riskTier={riskTier}
                 top_factors={analysisResult.top_factors}
                 secondary_model_comparison={analysisResult.secondary_model_comparison}
+                valueExplanations={valueExplanations}
               />
             )}
           </div>

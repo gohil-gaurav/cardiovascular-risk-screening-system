@@ -42,6 +42,7 @@ export default function NeuralDiagnosticProfile({
   riskTier: parentRiskTier,
   top_factors: propTopFactors,
   secondary_model_comparison: propSecondaryComparison,
+  valueExplanations = {},
 }) {
   const riskTier = parentRiskTier || analysisResult.risk_tier || "Low Risk";
 
@@ -104,6 +105,32 @@ export default function NeuralDiagnosticProfile({
     }
   };
 
+  const featureKeyMap = {
+    "Blood Pressure": "blood_pressure",
+    "ap_hi": "blood_pressure",
+    "ap_lo": "blood_pressure",
+    "Cholesterol": "cholesterol",
+    "cholesterol": "cholesterol",
+    "BMI": "bmi",
+    "bmi": "bmi",
+    "Smoking": "smoke",
+    "smoke": "smoke",
+    "Activity": "active",
+    "active": "active",
+    "Glucose": "gluc",
+    "gluc": "gluc",
+    "Age": "age",
+    "Gender": "gender",
+  };
+
+  const getValueExplanation = (factorLabel, factorFeature) => {
+    const key1 = featureKeyMap[factorLabel] || null;
+    const key2 = featureKeyMap[factorFeature] || null;
+    return valueExplanations[key1] || 
+           valueExplanations[key2] || 
+           null;
+  };
+
   const summaryRows = [
     { label: 'Age',            val: `${formData.age || '—'} years`,                     icon: <User     className="w-3.5 h-3.5 text-slate-400" /> },
     { label: 'Gender',         val: formData.gender === '1' ? 'Male' : 'Female',         icon: <User     className="w-3.5 h-3.5 text-slate-400" /> },
@@ -146,14 +173,29 @@ export default function NeuralDiagnosticProfile({
           <div className="space-y-4">
             {topFactors.map((factor, idx) => {
               const styles = getImpactStyles(factor.impact);
+              const dynamicWidth = factor.importance_pct 
+                ? `${Math.min(factor.importance_pct, 100)}%`
+                : styles.width;
+
+              const valueExplanation = getValueExplanation(
+                factor.label, 
+                factor.feature
+              );
+
               return (
                 <div key={idx} className="space-y-1.5 p-3 rounded-2xl bg-[#F8FAFD] border border-[#EDF2FA]">
                   <div className="flex justify-between items-center text-xs">
                     <span className="font-extrabold text-[#1A2440]">{factor.label}</span>
                     <div className="flex items-center gap-2">
-                      {factor.value && (
-                        <span className="text-[11px] font-mono text-slate-600 font-semibold">{factor.value}</span>
-                      )}
+                      {factor.importance_pct !== undefined ? (
+                        <span className="text-[11px] font-mono text-slate-600 font-semibold">
+                          {factor.importance_pct}% importance
+                        </span>
+                      ) : factor.value ? (
+                        <span className="text-[11px] font-mono text-slate-600 font-semibold">
+                          {factor.value}
+                        </span>
+                      ) : null}
                       <span className={`text-[9px] font-black uppercase px-2 py-0.5 rounded-full border ${styles.badgeColor}`}>
                         {styles.label}
                       </span>
@@ -164,11 +206,16 @@ export default function NeuralDiagnosticProfile({
                     <div
                       className="h-full rounded-full transition-all duration-700"
                       style={{
-                        width: styles.width,
+                        width: dynamicWidth,
                         background: styles.barBg,
                       }}
                     />
                   </div>
+                  {valueExplanation && (
+                    <p className="text-[10px] text-slate-500 italic font-medium pt-1">
+                      {valueExplanation}
+                    </p>
+                  )}
                 </div>
               );
             })}
