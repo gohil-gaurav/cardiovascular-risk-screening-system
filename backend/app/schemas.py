@@ -49,3 +49,11 @@ class ScreeningReport(BaseModel):
     mlp_protective_factors: list | None = None
     mlp_shap_values: list | None = None
 
+    # XGBoost threshold metrics
+    xgb_raw_probability: float | None = None
+    xgb_decision_threshold: float | None = None
+    xgb_probability_pct: float | None = None
+    threshold_margin: float | None = None
+    is_above_threshold: bool | None = None
+    threshold_proximity: str | None = None
+

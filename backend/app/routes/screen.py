@@ -86,5 +86,11 @@ def screen_patient(patient: dict, db: Session = Depends(get_db)) -> ScreeningRep
         mlp_primary_drivers=predict_response.get("mlp_primary_drivers"),
         mlp_protective_factors=predict_response.get("mlp_protective_factors"),
         mlp_shap_values=predict_response.get("mlp_shap_values"),
+        xgb_raw_probability=predict_response.get("xgb_raw_probability"),
+        xgb_decision_threshold=predict_response.get("xgb_decision_threshold"),
+        xgb_probability_pct=predict_response.get("xgb_probability_pct"),
+        threshold_margin=predict_response.get("threshold_margin"),
+        is_above_threshold=predict_response.get("is_above_threshold"),
+        threshold_proximity=predict_response.get("threshold_proximity"),
     )
 

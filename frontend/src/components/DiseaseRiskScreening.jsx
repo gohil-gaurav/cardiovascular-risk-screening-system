@@ -16,6 +16,7 @@ import {
 } from 'lucide-react';
 import NeuralDiagnosticProfile from './NeuralDiagnosticProfile';
 import PatientSimilarityCohorts from './PatientSimilarityCohorts';
+import ThresholdGauge from './ThresholdGauge';
 
 const genderLabel = (v) => (v === '1' ? 'Male' : 'Female');
 const cholLabel = (v) =>
@@ -59,6 +60,12 @@ export default function DiseaseRiskScreening({
   const riskThresholdExplanation = analysisResult.risk_threshold_explanation || "";
   const providerUsed = analysisResult.provider_used || "";
   const populationTier = analysisResult.population_comparison_tier || "Low Risk";
+
+  const xgbProbabilityPct = analysisResult.xgb_probability_pct ?? 0;
+  const xgbDecisionThreshold = analysisResult.xgb_decision_threshold ?? 0.45;
+  const thresholdMargin = analysisResult.threshold_margin ?? 0;
+  const isAboveThreshold = analysisResult.is_above_threshold ?? false;
+  const thresholdProximity = analysisResult.threshold_proximity ?? "";
 
   // Runtime consistency check for primary risk tier
   useEffect(() => {
@@ -380,6 +387,16 @@ export default function DiseaseRiskScreening({
             >
               Neural Diagnostic Profile
             </button>
+            <button 
+              onClick={() => setClinicianTab('threshold')}
+              className={`pb-3 font-bold text-xs tracking-wide uppercase border-b-2 cursor-pointer transition-all ${
+                clinicianTab === 'threshold' 
+                  ? 'border-[#3B7CF4] text-[#3B7CF4]' 
+                  : 'border-transparent text-slate-400 hover:text-slate-600'
+              }`}
+            >
+              Threshold Analysis
+            </button>
           </div>
 
           {/* Render embedded components */}
@@ -396,7 +413,7 @@ export default function DiseaseRiskScreening({
                 valueExplanations={valueExplanations}
                 cohort_traits={analysisResult.cohort_traits}
               />
-            ) : (
+            ) : clinicianTab === 'neural' ? (
               <NeuralDiagnosticProfile 
                 analysisResult={analysisResult} 
                 formData={formData} 
@@ -415,6 +432,17 @@ export default function DiseaseRiskScreening({
                 mlp_risk_level={analysisResult.mlp_risk_level}
                 mlp_prediction={analysisResult.mlp_prediction}
               />
+            ) : (
+              <div className="p-6">
+                <ThresholdGauge
+                  xgbProbabilityPct={xgbProbabilityPct}
+                  xgbDecisionThreshold={xgbDecisionThreshold}
+                  thresholdMargin={thresholdMargin}
+                  isAboveThreshold={isAboveThreshold}
+                  thresholdProximity={thresholdProximity}
+                  riskTier={riskTier}
+                />
+              </div>
             )}
           </div>
 

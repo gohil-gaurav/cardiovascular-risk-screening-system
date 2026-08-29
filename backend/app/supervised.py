@@ -236,5 +236,17 @@ def predict_supervised(df, input_dict: dict, height_m: float, bmi: float) -> dic
         "primary_drivers": primary_drivers,
         "protective_factors": protective_factors,
         "recommendations": recommendations,
-        "xgb_risk_pct": xgb_risk_pct
+        "xgb_risk_pct": xgb_risk_pct,
+        "xgb_raw_probability": round(xgb_prob, 4),
+        "xgb_decision_threshold": XGB_DECISION_THRESHOLD,
+        "xgb_probability_pct": round(xgb_prob * 100, 2),
+        "threshold_margin": round((xgb_prob - XGB_DECISION_THRESHOLD) * 100, 2),
+        "is_above_threshold": bool(xgb_prob >= XGB_DECISION_THRESHOLD),
+        "threshold_proximity": (
+            "Well above threshold" if xgb_prob >= XGB_DECISION_THRESHOLD + 0.2
+            else "Just above threshold" if xgb_prob >= XGB_DECISION_THRESHOLD + 0.05
+            else "At threshold boundary" if abs(xgb_prob - XGB_DECISION_THRESHOLD) < 0.05
+            else "Just below threshold" if xgb_prob >= XGB_DECISION_THRESHOLD - 0.1
+            else "Well below threshold"
+        )
     }

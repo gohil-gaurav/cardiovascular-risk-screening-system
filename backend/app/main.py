@@ -341,6 +341,12 @@ def predict_risk(data: PatientData, db: Session = Depends(get_db)):
             # Official decision fields (from primary XGBoost classifier)
             "prediction": sup_res["prediction"],
             "risk_score": sup_res["risk_score"],
+            "xgb_raw_probability": sup_res.get("xgb_raw_probability"),
+            "xgb_decision_threshold": sup_res.get("xgb_decision_threshold"),
+            "xgb_probability_pct": sup_res.get("xgb_probability_pct"),
+            "threshold_margin": sup_res.get("threshold_margin"),
+            "is_above_threshold": sup_res.get("is_above_threshold"),
+            "threshold_proximity": sup_res.get("threshold_proximity"),
             "risk_level": sup_res["risk_level"],
             "confidence": "96.8%",
             # Secondary comparison fields (PyTorch MLP - strictly for comparative analysis)
