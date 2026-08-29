@@ -39,6 +39,8 @@ export default function PatientSimilarityCohorts({
   isEmbedded = false,
   population_comparison_tier: propPopulationTier,
   clustering_confidence: propClusteringConfidence,
+  clusterExplanation = "",
+  valueExplanations = {},
 }) {
   // Extract population comparison tier
   const populationTier =
@@ -200,6 +202,15 @@ export default function PatientSimilarityCohorts({
             <h3 className="text-xs font-black uppercase tracking-wider text-slate-800">
               Matched Cohort Characteristics
             </h3>
+
+            {clusterExplanation ? (
+              <div className="p-4 bg-[#EEF3FF] border border-[#C7D7F8] rounded-2xl">
+                <p className="text-xs text-[#1B2B6B] font-semibold leading-relaxed">
+                  {clusterExplanation}
+                </p>
+              </div>
+            ) : null}
+
             <ul className="space-y-2.5">
               {traits.map((trait, idx) => (
                 <li key={idx} className="flex items-start gap-2.5 text-xs text-slate-700 font-semibold">
@@ -242,6 +253,46 @@ export default function PatientSimilarityCohorts({
               </div>
             </div>
           </div>
+
+          {Object.keys(valueExplanations).length > 0 && (
+            <div className="bg-white border border-[#DDE4EE] rounded-3xl p-6 shadow-xs space-y-4">
+              <h3 className="text-xs font-black uppercase tracking-wider text-slate-800 flex items-center gap-2">
+                <Info className="w-4 h-4 text-[#3B7CF4]" />
+                Health Indicators — Plain Language
+              </h3>
+              <p className="text-[11px] text-slate-500 font-medium">
+                AI-generated explanations for this patient's key health values:
+              </p>
+              <div className="space-y-2">
+                {Object.entries(valueExplanations).map(([key, explanation]) => {
+                  const labelMap = {
+                    smoke: "🚬 Smoking",
+                    active: "🏃 Physical Activity",
+                    cholesterol: "🩸 Cholesterol",
+                    gluc: "🍬 Glucose",
+                    blood_pressure: "❤️ Blood Pressure",
+                    bmi: "⚖️ BMI"
+                  };
+                  const label = labelMap[key] || key;
+                  return (
+                    <div
+                      key={key}
+                      className="flex items-start gap-3 p-3 bg-[#F8FAFD] border border-[#EDF2FA] rounded-xl"
+                    >
+                      <div className="flex-1">
+                        <span className="block text-[10px] font-black text-[#637082] uppercase tracking-wider">
+                          {label}
+                        </span>
+                        <span className="block text-xs font-semibold text-[#2C3B4E] mt-0.5">
+                          {explanation}
+                        </span>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+          )}
 
         </div>
 
