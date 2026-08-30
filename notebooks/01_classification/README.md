@@ -182,4 +182,4 @@ Swagger:
 http://127.0.0.1:8000/docs
 
 
-<img width="1536" height="1024" alt="image" src="https://github.com/user-attachments/assets/51e0ce16-e800-495a-888c-aa9578e26a3b" />
+
