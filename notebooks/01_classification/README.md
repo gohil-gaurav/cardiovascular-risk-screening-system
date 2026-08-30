@@ -90,3 +90,37 @@ The trained supervised-learning model was converted into a reusable, API-ready i
                          │
                          ▼
                  Swagger API Testing
+
+
+
+
+
+
+
+
+
+## API Response
+
+Example response:
+
+{
+  "prediction": 0,
+  "risk_label": "No Disease",
+  "risk_probability": 0.311,
+  "risk_percentage": 31.1,
+  "threshold_used": 0.37
+}
+
+## Project Structure
+
+```text
+src/
+└── prediction.py
+
+api/
+└── main.py
+
+artifacts/
+├── final_cardiovascular_risk_model.joblib
+├── features_names.json
+└── optimized_threshold.json
