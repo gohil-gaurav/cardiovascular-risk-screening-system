@@ -1,4 +1,5 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
+
 import {
   Users,
   Check,
@@ -8,8 +9,11 @@ import {
   Droplets,
   Info,
   AlertCircle,
-  HelpCircle
+  HelpCircle,
+  Sparkles,
+  Loader2
 } from 'lucide-react';
+import { fetchAISuggestions } from '../api/api';
 
 const traitMap = {
   'High Risk': [
@@ -49,6 +53,48 @@ export default function PatientSimilarityCohorts({
     analysisResult.population_comparison_tier ||
     analysisResult.clustering?.risk_tier ||
     "Low Risk";
+
+  // AI Suggestions state
+  const [suggestions, setSuggestions] = useState(null);
+  const [suggestionsLoading, setSuggestionsLoading] = useState(false);
+
+  useEffect(() => {
+    const riskScore =
+      analysisResult.final_risk_pct ??
+      analysisResult.risk_score ??
+      0;
+    const tier =
+      propPopulationTier ||
+      analysisResult.population_comparison_tier ||
+      analysisResult.clustering?.risk_tier ||
+      "Low Risk";
+    const primaryDriver =
+      (analysisResult.primary_drivers?.[0]?.factor) ||
+      (analysisResult.top_factors?.[0]?.label) ||
+      null;
+
+    if (!riskScore && tier === 'Low Risk') return; // skip if no real data
+
+    setSuggestionsLoading(true);
+    fetchAISuggestions({
+      risk_tier: tier,
+      risk_score: riskScore,
+      age: formData.age ? parseInt(formData.age) : undefined,
+      bmi: bmi ? parseFloat(bmi) : undefined,
+      smoker: formData.smoke !== undefined ? formData.smoke === '1' || formData.smoke === 1 : undefined,
+      active: formData.active !== undefined ? formData.active === '1' || formData.active === 1 : undefined,
+      cholesterol: formData.cholesterol ? parseInt(formData.cholesterol) : undefined,
+      glucose: formData.gluc ? parseInt(formData.gluc) : undefined,
+      ap_hi: formData.ap_hi ? parseInt(formData.ap_hi) : undefined,
+      ap_lo: formData.ap_lo ? parseInt(formData.ap_lo) : undefined,
+      primary_driver: primaryDriver,
+    }).then((res) => {
+      setSuggestionsLoading(false);
+      if (res.success && res.data?.suggestions) {
+        setSuggestions(res.data);
+      }
+    });
+  }, [analysisResult, formData, bmi]);
 
   // Extract GMM clustering confidence breakdown
   const confidenceData =
@@ -197,6 +243,99 @@ export default function PatientSimilarityCohorts({
             )}
           </div>
 
+          {/* ── AI LIFESTYLE SUGGESTIONS (left column, below GMM) ── */}
+          <div className="rounded-3xl overflow-hidden border border-[#DDE4EE] shadow-xs flex flex-col">
+            {/* Header */}
+            <div
+              className="flex items-center gap-3 px-5 py-3.5"
+              style={{
+                background: isHigh
+                  ? 'linear-gradient(135deg,#7F1D1D,#991B1B)'
+                  : isMod
+                  ? 'linear-gradient(135deg,#78350F,#92400E)'
+                  : 'linear-gradient(135deg,#064E3B,#065F46)',
+              }}
+            >
+              <div className="w-7 h-7 rounded-xl bg-white/20 flex items-center justify-center shrink-0">
+                <Sparkles className="w-3.5 h-3.5 text-white" />
+              </div>
+              <div className="flex-1 min-w-0">
+                <p className="text-[9px] font-black uppercase tracking-widest text-white/60">
+                  AI-Generated · Personalised
+                </p>
+                <h3 className="text-[13px] font-extrabold text-white leading-tight truncate">
+                  {suggestions?.title || 'Your Daily Heart Health Plan'}
+                </h3>
+              </div>
+              <span className="text-[8px] font-bold text-white/40 uppercase tracking-widest shrink-0">
+                LLM
+              </span>
+            </div>
+
+            {/* Body */}
+            <div className="bg-white p-5 space-y-3 flex-1">
+              {suggestionsLoading ? (
+                <div className="flex flex-col items-center gap-3 py-6">
+                  <Loader2
+                    className="w-5 h-5 animate-spin"
+                    style={{ color: isHigh ? '#DC2626' : isMod ? '#D97706' : '#059669' }}
+                  />
+                  <p className="text-xs font-semibold text-slate-400">Generating your plan...</p>
+                  <div className="w-full space-y-2 pt-1">
+                    {[...Array(6)].map((_, i) => (
+                      <div key={i} className="flex items-center gap-2.5 animate-pulse">
+                        <div className="w-7 h-7 rounded-xl bg-slate-100 shrink-0" />
+                        <div className="h-2.5 bg-slate-100 rounded-full" style={{ width: `${65 + (i % 3) * 12}%` }} />
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              ) : suggestions ? (
+                <>
+                  {suggestions.intro && (
+                    <p className="text-[11px] text-slate-500 font-semibold leading-relaxed">
+                      {suggestions.intro}
+                    </p>
+                  )}
+                  <ul className="space-y-2">
+                    {suggestions.suggestions.map((item, idx) => {
+                      const iconMap = {
+                        heart: '❤️', walk: '🚶', food: '🥗',
+                        sleep: '😴', stress: '🧘', doctor: '🩺',
+                        water: '💧', smoke: '🚭', alcohol: '🍹',
+                      };
+                      const emoji = iconMap[item.icon] || '✅';
+                      const col = isHigh
+                        ? { bg: '#FEF2F2', border: '#FCA5A5' }
+                        : isMod
+                        ? { bg: '#FFFBEB', border: '#FCD34D' }
+                        : { bg: '#ECFDF5', border: '#6EE7B7' };
+                      return (
+                        <li
+                          key={idx}
+                          className="flex items-start gap-2.5 p-2.5 rounded-xl border text-xs font-semibold text-slate-800"
+                          style={{ background: col.bg, borderColor: col.border }}
+                        >
+                          <span className="text-sm leading-none mt-0.5 shrink-0">{emoji}</span>
+                          <span className="leading-relaxed">{item.text}</span>
+                        </li>
+                      );
+                    })}
+                  </ul>
+                  <p className="text-[8px] text-slate-300 font-semibold text-right pt-1">
+                    {suggestions.fallback_used
+                      ? 'General guidelines · Not personalised'
+                      : `By ${suggestions.provider_used} · Not a prescription`}
+                  </p>
+                </>
+              ) : (
+                <p className="text-xs text-slate-300 font-semibold text-center py-4">
+                  Run a screening to see your plan.
+                </p>
+              )}
+            </div>
+          </div>
+
         </div>
 
         {/* ── RIGHT COLUMN: COHORT CHARACTERISTICS + BIOMETRIC DATA ──────── */}
@@ -302,6 +441,7 @@ export default function PatientSimilarityCohorts({
         </div>
 
       </div>
+
 
     </div>
   );

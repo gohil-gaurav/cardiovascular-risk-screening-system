@@ -415,8 +415,10 @@ def confirm_outcome(payload: ConfirmOutcomeRequest, db: Session = Depends(get_db
 # Register routes orchestrator at the bottom after predict_risk is defined
 from app.routes.screen import router as screen_router
 from app.routes.records import router as records_router
+from app.routes.suggestions import router as suggestions_router
 
 app.include_router(screen_router, prefix="/api")
 app.include_router(records_router, prefix="/api")
+app.include_router(suggestions_router, prefix="/api")
 
 

@@ -58,6 +58,10 @@ export default function DiseaseRiskScreening({
   const valueExplanations = analysisResult.value_explanations || {};
   const clusterExplanation = analysisResult.cluster_explanation || "";
   const riskThresholdExplanation = analysisResult.risk_threshold_explanation || "";
+
+  // XGBoost SHAP drivers (already human-readable from backend)
+  const xgbPrimaryDrivers = analysisResult.primary_drivers || [];
+  const xgbProtectiveFactors = analysisResult.protective_factors || [];
   const providerUsed = analysisResult.provider_used || "";
   const populationTier = analysisResult.population_comparison_tier || "Low Risk";
 
@@ -175,6 +179,93 @@ export default function DiseaseRiskScreening({
                 <div className="mt-3 px-4 py-2.5 bg-[#EEF3FF] border border-[#C7D7F8] rounded-2xl text-center">
                   <p className="text-[11px] text-[#1B2B6B] font-semibold leading-relaxed">
                     {riskThresholdExplanation}
+                  </p>
+                </div>
+              )}
+
+              {/* ── XGBoost SHAP: Why This Score? ────────────────────── */}
+              {(xgbPrimaryDrivers.length > 0 || xgbProtectiveFactors.length > 0) && (
+                <div className="mt-4 w-full space-y-3">
+                  <div className="flex items-center gap-2 px-1">
+                    <span className="flex-1 h-px" style={{ background: '#E4EBF5' }} />
+                    <span className="text-[10px] font-black uppercase tracking-widest" style={{ color: '#9DAABB' }}>
+                      Why this score?
+                    </span>
+                    <span className="flex-1 h-px" style={{ background: '#E4EBF5' }} />
+                  </div>
+
+                  {/* Risk-Raising Factors */}
+                  {xgbPrimaryDrivers.length > 0 && (
+                    <div className="rounded-2xl overflow-hidden border" style={{ borderColor: '#FEE2E2', background: '#FFF8F8' }}>
+                      <div className="flex items-center gap-2 px-3 py-2" style={{ background: '#FEF2F2', borderBottom: '1px solid #FEE2E2' }}>
+                        <span className="w-2 h-2 rounded-full" style={{ background: '#EF4444' }} />
+                        <span className="text-[10px] font-black uppercase tracking-widest" style={{ color: '#B91C1C' }}>
+                          Raising Your Risk
+                        </span>
+                      </div>
+                      <div className="px-3 py-2.5 space-y-2.5">
+                        {xgbPrimaryDrivers.slice(0, 4).map((driver, idx) => {
+                          const pct = Math.min(driver.importance_pct, 100);
+                          return (
+                            <div key={idx} className="space-y-1">
+                              <div className="flex justify-between items-center">
+                                <span className="text-[11px] font-semibold leading-tight pr-2" style={{ color: '#7F1D1D' }}>
+                                  {driver.factor}
+                                </span>
+                                <span className="text-[10px] font-black shrink-0" style={{ color: '#DC2626' }}>
+                                  {driver.contribution}
+                                </span>
+                              </div>
+                              <div className="w-full h-1.5 rounded-full overflow-hidden" style={{ background: '#FECACA' }}>
+                                <div
+                                  className="h-full rounded-full transition-all duration-700"
+                                  style={{ width: `${pct}%`, background: 'linear-gradient(90deg,#EF4444,#DC2626)' }}
+                                />
+                              </div>
+                            </div>
+                          );
+                        })}
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Protective Factors */}
+                  {xgbProtectiveFactors.length > 0 && (
+                    <div className="rounded-2xl overflow-hidden border" style={{ borderColor: '#A7F3D0', background: '#F0FDF9' }}>
+                      <div className="flex items-center gap-2 px-3 py-2" style={{ background: '#ECFDF5', borderBottom: '1px solid #A7F3D0' }}>
+                        <span className="w-2 h-2 rounded-full" style={{ background: '#10B981' }} />
+                        <span className="text-[10px] font-black uppercase tracking-widest" style={{ color: '#065F46' }}>
+                          Protecting You
+                        </span>
+                      </div>
+                      <div className="px-3 py-2.5 space-y-2.5">
+                        {xgbProtectiveFactors.slice(0, 3).map((factor, idx) => {
+                          const pct = Math.min(factor.importance_pct, 100);
+                          return (
+                            <div key={idx} className="space-y-1">
+                              <div className="flex justify-between items-center">
+                                <span className="text-[11px] font-semibold leading-tight pr-2" style={{ color: '#064E3B' }}>
+                                  {factor.factor}
+                                </span>
+                                <span className="text-[10px] font-black shrink-0" style={{ color: '#059669' }}>
+                                  {factor.contribution}
+                                </span>
+                              </div>
+                              <div className="w-full h-1.5 rounded-full overflow-hidden" style={{ background: '#BBF7D0' }}>
+                                <div
+                                  className="h-full rounded-full transition-all duration-700"
+                                  style={{ width: `${pct}%`, background: 'linear-gradient(90deg,#10B981,#059669)' }}
+                                />
+                              </div>
+                            </div>
+                          );
+                        })}
+                      </div>
+                    </div>
+                  )}
+
+                  <p className="text-center text-[9px] font-semibold" style={{ color: '#B0BCCF' }}>
+                    Powered by XGBoost · SHAP TreeExplainer
                   </p>
                 </div>
               )}

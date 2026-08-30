@@ -13,9 +13,10 @@ import {
   ShieldAlert,
   ArrowLeft,
   Activity,
-  Heart
+  Heart,
+  Trash2
 } from 'lucide-react';
-import { fetchRecords, updateRecord } from '../api/recordsApi';
+import { fetchRecords, updateRecord, deleteRecord, deleteRecordsBulk } from '../api/recordsApi';
 
 export default function PatientRecords({ onBackToHome }) {
   const [records, setRecords] = useState([]);
@@ -33,6 +34,10 @@ export default function PatientRecords({ onBackToHome }) {
   const [selectedRecord, setSelectedRecord] = useState(null);
   const [editForm, setEditForm] = useState(null);
   const [saving, setSaving] = useState(false);
+
+  // Multi-select state for bulk delete
+  const [selectedIds, setSelectedIds] = useState(new Set());
+  const [bulkDeleting, setBulkDeleting] = useState(false);
 
   // Load records
   const loadData = async (targetPage = page, tab = filterTab) => {
@@ -56,12 +61,15 @@ export default function PatientRecords({ onBackToHome }) {
   useEffect(() => {
     loadData(1, filterTab);
     setPage(1);
+    setSelectedIds(new Set()); // clear selection when tab changes
   }, [filterTab]);
+
 
   const handlePageChange = (newPage) => {
     if (newPage >= 1 && newPage <= totalPages) {
       setPage(newPage);
       loadData(newPage, filterTab);
+      setSelectedIds(new Set()); // clear selection on page change
     }
   };
 
@@ -137,6 +145,72 @@ export default function PatientRecords({ onBackToHome }) {
       setTimeout(() => setSuccessMsg(null), 4000);
     } else {
       setError(res.error || 'Failed to save record changes.');
+    }
+  };
+
+  const handleDeleteRecord = async (recordId) => {
+    const confirmed = window.confirm(
+      `⚠️ Permanently delete Screening Record #${recordId}?\n\nThis action cannot be undone. The patient data will be removed from the database.`
+    );
+    if (!confirmed) return;
+
+    setError(null);
+    setSuccessMsg(null);
+    const res = await deleteRecord(recordId);
+
+    if (res.success) {
+      setSuccessMsg(`Screening Record #${recordId} deleted successfully.`);
+      handleCloseModal();
+      loadData(page, filterTab);
+      setTimeout(() => setSuccessMsg(null), 4000);
+    } else {
+      setError(res.error || 'Failed to delete record.');
+    }
+  };
+
+  // Multi-select helpers
+  const allPageIds = records.map((r) => r.id);
+  const allSelected = allPageIds.length > 0 && allPageIds.every((id) => selectedIds.has(id));
+  const someSelected = allPageIds.some((id) => selectedIds.has(id)) && !allSelected;
+
+  const toggleSelectAll = () => {
+    if (allSelected) {
+      setSelectedIds(new Set());
+    } else {
+      setSelectedIds(new Set(allPageIds));
+    }
+  };
+
+  const toggleSelectRow = (id) => {
+    setSelectedIds((prev) => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id);
+      else next.add(id);
+      return next;
+    });
+  };
+
+  const handleBulkDelete = async () => {
+    const ids = [...selectedIds];
+    if (ids.length === 0) return;
+    const confirmed = window.confirm(
+      `⚠️ Permanently delete ${ids.length} selected screening record(s)?\n\nThis action cannot be undone.`
+    );
+    if (!confirmed) return;
+
+    setBulkDeleting(true);
+    setError(null);
+    setSuccessMsg(null);
+    const res = await deleteRecordsBulk(ids);
+    setBulkDeleting(false);
+
+    if (res.success) {
+      setSuccessMsg(`${res.data.deleted_count} record(s) deleted successfully.`);
+      setSelectedIds(new Set());
+      loadData(page, filterTab);
+      setTimeout(() => setSuccessMsg(null), 5000);
+    } else {
+      setError(res.error || 'Bulk delete failed.');
     }
   };
 
@@ -270,8 +344,23 @@ export default function PatientRecords({ onBackToHome }) {
               </div>
             </div>
 
-            <div className="text-xs font-medium text-[#556980]">
-              Showing {records.length} of {totalRecords} total screenings
+            <div className="flex items-center gap-3">
+              {/* Bulk Delete Action — appears only when rows are selected */}
+              {selectedIds.size > 0 && (
+                <button
+                  onClick={handleBulkDelete}
+                  disabled={bulkDeleting}
+                  className="inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-rose-600 hover:bg-rose-700 text-white text-xs font-bold transition-all cursor-pointer disabled:opacity-60 shadow-sm animate-fade-in"
+                >
+                  {bulkDeleting
+                    ? <RefreshCw className="w-3.5 h-3.5 animate-spin" />
+                    : <Trash2 className="w-3.5 h-3.5" />}
+                  Delete Selected ({selectedIds.size})
+                </button>
+              )}
+              <div className="text-xs font-medium text-[#556980]">
+                Showing {records.length} of {totalRecords} total screenings
+              </div>
             </div>
           </div>
 
@@ -280,6 +369,17 @@ export default function PatientRecords({ onBackToHome }) {
             <table className="w-full text-left text-sm border-collapse">
               <thead>
                 <tr className="bg-[#EBF1F6] border-b border-[#D2E2F0] text-[#556980] font-semibold text-xs uppercase tracking-wider">
+                  {/* Select-All Checkbox */}
+                  <th className="py-3.5 px-4 w-10">
+                    <input
+                      type="checkbox"
+                      checked={allSelected}
+                      ref={(el) => { if (el) el.indeterminate = someSelected; }}
+                      onChange={toggleSelectAll}
+                      className="w-4 h-4 rounded border-[#CBD5E1] accent-[#2563EB] cursor-pointer"
+                      title={allSelected ? 'Deselect all' : 'Select all on this page'}
+                    />
+                  </th>
                   <th className="py-3.5 px-4">Record ID</th>
                   <th className="py-3.5 px-4">Screening Date</th>
                   <th className="py-3.5 px-4">Patient Summary</th>
@@ -293,7 +393,7 @@ export default function PatientRecords({ onBackToHome }) {
               <tbody className="divide-y divide-[#D2E2F0]">
                 {loading ? (
                   <tr>
-                    <td colSpan="8" className="py-12 text-center text-[#556980]">
+                    <td colSpan="9" className="py-12 text-center text-[#556980]">
                       <div className="flex flex-col items-center gap-2">
                         <RefreshCw className="w-6 h-6 animate-spin text-[#2563EB]" />
                         <span>Loading patient screening records...</span>
@@ -302,7 +402,7 @@ export default function PatientRecords({ onBackToHome }) {
                   </tr>
                 ) : records.length === 0 ? (
                   <tr>
-                    <td colSpan="8" className="py-12 text-center text-[#556980]">
+                    <td colSpan="9" className="py-12 text-center text-[#556980]">
                       No patient records found for the selected filter.
                     </td>
                   </tr>
@@ -310,13 +410,27 @@ export default function PatientRecords({ onBackToHome }) {
                   records.map((rec) => {
                     const isConfirmed = !!rec.doctor_confirmed_label;
                     const isDisease = rec.doctor_confirmed_label === 'Disease';
+                    const isRowSelected = selectedIds.has(rec.id);
 
                     return (
                       <tr
                         key={rec.id}
-                        className="hover:bg-[#F4F8FC] transition-colors group cursor-pointer"
+                        className={`transition-colors group cursor-pointer ${
+                          isRowSelected
+                            ? 'bg-blue-50 border-l-2 border-l-[#2563EB]'
+                            : 'hover:bg-[#F4F8FC]'
+                        }`}
                         onClick={() => handleOpenDetail(rec)}
                       >
+                        {/* Row checkbox */}
+                        <td className="py-3.5 px-4" onClick={(e) => e.stopPropagation()}>
+                          <input
+                            type="checkbox"
+                            checked={isRowSelected}
+                            onChange={() => toggleSelectRow(rec.id)}
+                            className="w-4 h-4 rounded border-[#CBD5E1] accent-[#2563EB] cursor-pointer"
+                          />
+                        </td>
                         <td className="py-3.5 px-4 font-mono font-bold text-[#102A43]">
                           #{rec.id}
                         </td>
@@ -657,23 +771,37 @@ export default function PatientRecords({ onBackToHome }) {
               </div>
 
               {/* Modal Footer Buttons */}
-              <div className="pt-4 border-t border-[#D2E2F0] flex items-center justify-end gap-3">
+              <div className="pt-4 border-t border-[#D2E2F0] flex items-center justify-between gap-3">
+                {/* Delete button on the left */}
                 <button
                   type="button"
-                  onClick={handleCloseModal}
-                  className="px-4 py-2.5 rounded-xl border border-[#D2E2F0] text-sm font-semibold text-[#556980] hover:bg-[#EBF1F6] transition-colors cursor-pointer"
+                  onClick={() => handleDeleteRecord(selectedRecord.id)}
+                  className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl border border-rose-200 text-sm font-semibold text-rose-700 bg-rose-50 hover:bg-rose-100 hover:border-rose-300 transition-all cursor-pointer"
                 >
-                  Cancel
+                  <Trash2 className="w-4 h-4" />
+                  Delete Record
                 </button>
-                <button
-                  type="submit"
-                  disabled={saving}
-                  className="px-5 py-2.5 rounded-xl bg-[#102A43] hover:bg-[#071624] text-white text-sm font-semibold transition-all shadow-sm flex items-center gap-2 cursor-pointer disabled:opacity-50"
-                >
-                  {saving && <RefreshCw className="w-4 h-4 animate-spin" />}
-                  Save Record Changes
-                </button>
+
+                {/* Cancel + Save on the right */}
+                <div className="flex items-center gap-3">
+                  <button
+                    type="button"
+                    onClick={handleCloseModal}
+                    className="px-4 py-2.5 rounded-xl border border-[#D2E2F0] text-sm font-semibold text-[#556980] hover:bg-[#EBF1F6] transition-colors cursor-pointer"
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    type="submit"
+                    disabled={saving}
+                    className="px-5 py-2.5 rounded-xl bg-[#102A43] hover:bg-[#071624] text-white text-sm font-semibold transition-all shadow-sm flex items-center gap-2 cursor-pointer disabled:opacity-50"
+                  >
+                    {saving && <RefreshCw className="w-4 h-4 animate-spin" />}
+                    Save Record Changes
+                  </button>
+                </div>
               </div>
+
 
             </form>
           </div>

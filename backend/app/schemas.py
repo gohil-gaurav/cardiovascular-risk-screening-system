@@ -57,3 +57,12 @@ class ScreeningReport(BaseModel):
     is_above_threshold: bool | None = None
     threshold_proximity: str | None = None
 
+    # XGBoost SHAP human-readable drivers (from TreeExplainer)
+    primary_drivers: list | None = None
+    protective_factors: list | None = None
+    risk_score: float | None = None
+    risk_level: str | None = None
+    shap_values: list | None = None
+    shap_base_value: float | None = None
+    shap_base_value_logodds: float | None = None
+

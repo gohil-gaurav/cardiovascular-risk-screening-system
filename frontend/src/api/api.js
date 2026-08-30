@@ -44,4 +44,23 @@ export async function submitScreening(patientData) {
     }
 }
 
-export default api;
+/**
+ * Fetches AI-generated daily lifestyle suggestions for a patient based on
+ * their risk tier, risk score, and key health metrics.
+ *
+ * @param {Object} context - { risk_tier, risk_score, age, bmi, smoker, active, cholesterol, glucose, ap_hi, ap_lo, primary_driver }
+ * @returns {Promise<{ success: boolean, data?: Object, error?: string }>}
+ */
+export async function fetchAISuggestions(context) {
+    try {
+        const response = await api.post("/api/ai-suggestions", context, { timeout: 30000 });
+        return { success: true, data: response.data };
+    } catch (error) {
+        return {
+            success: false,
+            error: error.response?.data?.detail || "Could not load AI suggestions.",
+        };
+    }
+}
+
+export default api;

@@ -187,3 +187,69 @@ def update_screening_record(
         "message": "Screening record updated successfully.",
         "record": serialize_record(record)
     }
+
+
+@router.delete("/records/{record_id}")
+def delete_screening_record(record_id: int, db: Session = Depends(get_db)):
+    """
+    [DOCTOR/CLINICIAN ONLY]
+    Permanently deletes a patient screening record from the database.
+
+    SECURITY NOTE: In production, this endpoint must be protected by RBAC
+    and require explicit clinician authentication before allowing deletion.
+    """
+    record = db.query(ScreeningRecord).filter(ScreeningRecord.id == record_id).first()
+    if not record:
+        raise HTTPException(
+            status_code=404,
+            detail=f"Screening record with ID {record_id} not found."
+        )
+
+    db.delete(record)
+    db.commit()
+
+    logger.info(f"Screening record {record_id} permanently deleted by clinician.")
+
+    return {
+        "status": "success",
+        "message": f"Screening record #{record_id} has been permanently deleted."
+    }
+
+
+class BulkDeleteRequest(BaseModel):
+    """Schema for bulk deletion of multiple screening records."""
+    ids: list[int] = Field(..., min_length=1, description="List of record IDs to permanently delete")
+
+
+@router.post("/records/bulk-delete")
+def bulk_delete_screening_records(payload: BulkDeleteRequest, db: Session = Depends(get_db)):
+    """
+    [DOCTOR/CLINICIAN ONLY]
+    Permanently deletes multiple patient screening records in a single transaction.
+
+    Returns a summary of how many records were deleted and any IDs that were not found.
+    """
+    requested_ids = list(set(payload.ids))  # deduplicate
+
+    records = db.query(ScreeningRecord).filter(ScreeningRecord.id.in_(requested_ids)).all()
+    found_ids = {r.id for r in records}
+    not_found_ids = [i for i in requested_ids if i not in found_ids]
+
+    for record in records:
+        db.delete(record)
+
+    db.commit()
+
+    logger.info(
+        f"Bulk delete: {len(found_ids)} screening records deleted by clinician. "
+        f"IDs: {sorted(found_ids)}. Not found: {not_found_ids}"
+    )
+
+    return {
+        "status": "success",
+        "deleted_count": len(found_ids),
+        "deleted_ids": sorted(found_ids),
+        "not_found_ids": not_found_ids,
+        "message": f"{len(found_ids)} screening record(s) permanently deleted."
+    }
+

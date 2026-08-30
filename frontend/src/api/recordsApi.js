@@ -84,4 +84,48 @@ export async function updateRecord(id, updateData) {
   }
 }
 
+/**
+  * Permanently deletes a patient screening record.
+  * 
+  * @param {number} id - Record ID to delete
+  * @returns {Promise<{ success: boolean, data?: Object, error?: string }>}
+  */
+export async function deleteRecord(id) {
+  try {
+    const response = await recordsClient.delete(`/api/records/${id}`);
+    return {
+      success: true,
+      data: response.data,
+    };
+  } catch (error) {
+    const errorMsg = error.response?.data?.detail || 'Failed to delete screening record.';
+    return {
+      success: false,
+      error: errorMsg,
+    };
+  }
+}
+
+/**
+  * Permanently deletes multiple patient screening records in one request.
+  * 
+  * @param {number[]} ids - Array of record IDs to delete
+  * @returns {Promise<{ success: boolean, data?: Object, error?: string }>}
+  */
+export async function deleteRecordsBulk(ids) {
+  try {
+    const response = await recordsClient.post('/api/records/bulk-delete', { ids });
+    return {
+      success: true,
+      data: response.data,
+    };
+  } catch (error) {
+    const errorMsg = error.response?.data?.detail || 'Failed to bulk-delete screening records.';
+    return {
+      success: false,
+      error: errorMsg,
+    };
+  }
+}
+
 export default recordsClient;

@@ -92,5 +92,13 @@ def screen_patient(patient: dict, db: Session = Depends(get_db)) -> ScreeningRep
         threshold_margin=predict_response.get("threshold_margin"),
         is_above_threshold=predict_response.get("is_above_threshold"),
         threshold_proximity=predict_response.get("threshold_proximity"),
+        # XGBoost SHAP human-readable drivers
+        primary_drivers=predict_response.get("primary_drivers"),
+        protective_factors=predict_response.get("protective_factors"),
+        risk_score=predict_response.get("risk_score"),
+        risk_level=predict_response.get("risk_level"),
+        shap_values=predict_response.get("shap_values"),
+        shap_base_value=predict_response.get("shap_base_value"),
+        shap_base_value_logodds=predict_response.get("shap_base_value_logodds"),
     )
 
